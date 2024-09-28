@@ -1,0 +1,13 @@
+name: Health plugin top-level commands
+cpd-min-version: 3.5.0
+plugin-type: executable
+plugin-id: health
+plugin-version: 0.1.0
+executable:
+  darwin: health
+  linux: health
+  windows: health.exe
+  ppc64le: health
+  s390x: health
+alias: health
+alias-help-text: Run health commands

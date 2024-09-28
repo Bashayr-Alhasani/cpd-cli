@@ -1,0 +1,36 @@
+name: Manage CPD model life cycle
+cpd-min-version: 5.0.2
+plugin-type: executable
+plugin-id: cpdctl
+plugin-version: 1.6.28
+executable:
+  darwin: cpdctl
+  linux: cpdctl
+  windows: cpdctl.exe
+  ppc64le: cpdctl
+  s390x: cpdctl
+commands:
+- command: asset
+  short-help: Manage Assets
+- command: project
+  short-help: Manage Projects
+- command: space
+  short-help: Manage Spaces
+- command: connection
+  short-help: Manage Connections
+- command: environment
+  short-help: Manage Environments and Runtimes
+- command: notebook
+  short-help: Manage Notebooks
+- command: code-package
+  short-help: Manage Code Packages
+- command: job
+  short-help: Manage Jobs and Scheduling Service
+- command: ml
+  short-help: Manage Watson Machine Learning
+- command: datastage
+  short-help: Manage IBM APIs for DataStage
+- command: wx-ai
+  short-help: Manage watsonx.ai
+- command: pipeline
+  short-help: Manage IBM Orchestration Pipelines

@@ -1,0 +1,4516 @@
+---
+# vars file for utils
+# this file is omitted from automerge, changes will not be pushed to upstream branches
+#
+#
+
+green: "\e[0m\e[38;5;82m"
+yellow: "\e[0m\e[38;5;11m"
+bright_purple: "\e[0m\e[38;5;105m"
+cyan: "\e[0m\e[38;5;51m"
+green_bg_black_fg: "\e[0m\e[48;5;40m\e[38;5;232m"
+yellow_bg_black_fg: "\e[0m\e[48;5;226m\e[38;5;232m"
+purple_bg_white_fg: "\e[0m\e[48;5;57m\e[38;5;255m"
+cyan_bg_black_fg: "\e[0m\e[48;5;87m\e[38;5;232m"
+magenta: "\e[38;5;198m"
+white: "\e[0m\e[38;5;255m"
+ansible_callback_diy_runner_retry_msg: >-
+          {%- set result = ansible_callback_diy.result.output -%}
+          {%- set retries_left = result.retries - result.attempts -%}
+          Not ready yet - Retrying: {{ ansible_callback_diy.task.name }} {{ yellow }}({{ retries_left }} Retries left)
+
+#===============
+
+ocp_check: true
+
+runid: "{{ lookup('pipe','date -u +%Y_%m_%d_%H_%M_%S')| default('000', true) }}"
+
+# default, always update release_version to the latest release
+release_version: 5.0.0
+latest_release: CPD_VERSION # this will be overridden by build time
+
+work_root: "{{ lookup('env','WORK_ROOT')| default('/tmp/work', true) }}"
+
+external_work_root: "{{ lookup('env','EXTERNAL_WORK_ROOT')| default('', true) }}"
+
+default_case_repo_path: "{{  lookup('env', 'CASE_REPO_PATH') | default ('https://github.com/IBM/cloud-pak/raw/master/repo/case', true) }}"
+
+default_case_oci_path: "cp.icr.io/cpopen"
+
+# since cpfs could be in a different repo from cpd for the dev/test case
+cpfs_repo_path: "{{ lookup('env', 'CPFS_CASE_REPO_PATH') | default ('https://github.com/IBM/cloud-pak/raw/master/repo/case', true) }}"
+
+# opencontent cases could be in a different repo from cpd/cpfs for the dev/test case
+opencontent_repo_path: "{{ lookup('env', 'OPENCONTENT_CASE_REPO_PATH') | default ('https://github.com/IBM/cloud-pak/raw/master/repo/case', true) }}"
+
+default_offline_root: "{{ work_root }}/offline"
+
+cpfs_scripts_dir: "{{ work_root}}/cpfs_scripts"
+
+override_offline_root: "{{ lookup('env','CASE_OFFLINE_DIR')| default(default_offline_root, true) }}"
+
+offline_root: "{{ custom_offline_root | default(override_offline_root, true) }}/{{ release_version }}"
+
+auth_dir: "{{ lookup('env','HOME') }}/.airgap/secrets"
+auth_path: "{{ auth_dir }}/config.json"
+ibm_pak_base_path:  "{{ lookup('env', 'IBMPAK_BASE_DIR') | default ('/.ibm-pak/data', true) }}"
+
+utils_files_dir_path: "/opt/ansible/ansible-play/roles/utils/files/"
+
+dquote: '"'
+
+# If set to true, the component_dependencies are ignored, i.e. olm-utils will
+# not try to download dependencies not install dependent catalogs.
+# This is useful mainly in dev, when you want fine control on which components to
+# install, for example installing a WS from local while keeping installed CCS from
+# dev.
+ignore_component_dependencies: false
+
+gen_preview: false
+
+force_yaml_gen: false
+
+rsi_patch_info_out_file: "{{ work_root }}/rsi_patch_info.out"
+
+rsi_patch_logs_out_file: "{{ work_root }}/rsi_patch_logs.out"
+
+components_out_file: "{{ work_root }}/components.csv"
+
+get_physical_location_out_file: "{{ work_root }}/get_physical_location.out"
+
+gen_script_file: "{{ work_root }}/preview.sh"
+
+external_gen_script_file: "{{ external_work_root }}/preview.sh"
+
+gen_yaml_file: "{{ work_root }}/preview.yaml"
+
+release_vars: "{{ playbook_dir }}/config-vars/release-{{ release_version }}.yml"
+
+case_toleration: "{{ lookup('env','CASE_TOLERATION')| default('',true) }}"
+
+upgrade_apply_pause: 1
+#default just a second, but for upgrade - we should wait at least 2 minutes for OLM to trigger the operator to start the upgrade
+
+catsrc_ready_delay: 60
+catsrc_ready_retries: 30
+csv_ready_retries: 20
+csv_ready_delay: 120
+operator_ready_retries: 10
+operator_ready_delay: 60
+
+cr_status_delay: 60
+
+mirror_retries: 3
+mirror_delay: 60
+
+case_download_retries: 5
+case_download_delay: 0
+
+internal_patch: false
+
+#===============
+#
+# cs_ns_default: "ibm-common-services"
+cpd_operator_ns: "ibm-common-services"
+# cs_ns: "{{ cpd_operator_ns }}"
+catsrc_ns: "{{ cpd_operator_ns }}"
+openshift_operator_ns: "openshift-operators"
+ns_setup: true
+
+sub_install_plan_approval: "Automatic"
+operand_api_version: "operator.ibm.com/v1alpha1"
+
+odlm_deployment: "operand-deployment-lifecycle-manager"
+operator_group_name: "operatorgroup"
+###########################
+
+example_component_details:
+
+  placeholder_component:
+    description: "this is the placeholder Service"
+### Case details
+###case_name: placeholder-case
+####case_save_args: "any custom args such as --skip-dependencies. include if you have component_dependencies"
+####case_inventory: placeholder-inventorySetup ## do not set if a higher level service will recursively install the catsrc instead
+####catsrc_name: placeholder-catalog ## needed even if another CASE recursively creates it, because we intend to validate presence of every catsrc.
+####custom_catsrc_image: will be replaced the catsrc associated with the case package.
+####olm_auto_update: false implies that any existing catalog source and subscription will NOT be updated with apply-olm when --components is not provided
+####### usually the case for dependencies and the top-level component implicitly drives the update of the dependency too
+####sub_ns: "{{ cpd_operator_ns }}"
+####sub_name: "placeholder-operator-sub"  # Note that if sub_name is not provided, olm-utils will NOT handle that dependency component and let olm dependency handle it
+####pkg_name: "placeholder-operator"
+####sub_channel: "v2.0"
+####internal_sub: true   # for those should be deployed by OLM dependency or ODLM but not olm-utils
+### CR details
+#####pkg_name: "placeholder-operator"
+####cr_comment: "this is the placeholder Service"
+###cr_name: "placeholder-cr"
+###cr_api: "placeholder.cpd.ibm.com"
+###cr_api_version: "v1"
+###cr_kind: "placeholder"
+###crd_name: "placeholders.placeholder.cpd.ibm.com"
+###status_field: "placeholderStatus"
+###status_success: "Completed"
+###status_failed: "Failed"
+###status_max_retries: 20
+### what this component is dependent on (optional)
+### note - include case_save_args: "--skip-dependencies" as well
+### set case_catsrc_recursive: "  " to avoid any recursive CASE cat src installs
+### support_shutdown: false # indicate whether the component can be shut down and restart by olm-utils. If set to true, also provide the below two fields with status used for shutdown
+### status_shutdown_success: "shutdown"  # if status is different than the default ones, must indicate this field
+### status_shutdown_failed: "shutdownError" # if status is different than the default ones, must indicate this field
+### support_shutdown_in_api: false # if set to true, the component can be shut down and restart by the CPD Management Service API.
+### shutdown_requires_manual_steps: false # if set to true, the component do support shut down by the olm-utils API server but it requires extra steps before or after the service is shut down by the API.
+### shutdown_all_instances: false
+    #false: Default is false, will only shutdown the CR that is matched the cr.name specified in global.yaml
+    #true: set to True when service has key multi_instances and would like them to be shutdown one by one via OLM-UTILS
+### skip_shutdown_check: true
+    #false: Default is false. The component will be included in the dependency check for the shutdown and restart commands.
+    #true: Do not include the component in the dependency check for the shutdown and restart commands. The component will be shut down or restarted by the component with a dependency on this component.
+### support_online_upgrade: true
+    #true: default is true, upgrades (rolling upgrades) can be done on live system without requiring any downtime or at-least with minimal downtime
+    #false: do not support online upgrades (disruption free)
+### list of apiGroups and resources that an instance administrator must have access to in order to install, modify, and view the custom resources for Cloud Pak for Data.
+    #kube_resources:
+    #  - apiGroups:
+    #      - apiGroups1
+    #    resources:
+    #      - resource1
+    #  - apiGroups:
+    #      - apiGroups1
+    #    resources:
+    #      - resource1
+### Provide scale config info if your service supports T-shirt size scaling: https://github.ibm.com/PrivateCloud-analytics/CPD-TechSpec/blob/master/CPD_Cli_Scaling_Spec.md#2-overview-of-the-approach
+    # scale_config_supported: true|false
+    # scale_config_field: <the field in the CR that controls scaling>
+    # scale_all_instances: true|false
+    # scale_config_values:
+    #   level_1: small_mincpureq
+    #   level_2: <your_service_scaling_option>
+    #   level_3: <your_service_scaling_option>
+    #   level_4: <your_service_scaling_option>
+    #   level_5: <your_service_scaling_option>
+    #   default: <default_value>
+### Provide addon id for your service registered in zen metastore db
+    # addon_id: <addon_id>
+####component_dependencies:
+####  - another_component
+####  - an_internal_shared_component
+### set cr_internal if it is always a dependency, never explicitly picked by a user to deploy
+####cr_internal: "true" ## or omit if not internal.
+### supported_arch: "amd64,ppc64le" ## only include architectures that are supported as a comma separated list. If not present, default is "amd64,ppc64le,s390x"
+### skip_image_prune: true ## or omit and default to false. If set to true, olm utils will NOT prune image for this component based on arch.
+### multi_arch_images: "cpopen/common-service-operator,cpopen/ibm-namespace-scope-operator" #comma separated string for multiple images
+### upgrade_can_delete_cr: set true if a CR might be deleted by the operator during release upgrade. Only makes sense with 'multi_instances: true'. Default is false.
+### auto_remove_hotfix: true, set true to allow OLM-UTILS remove any hot fix fields in service CR during upgrade
+### deprecated: true, (better to comment what is the 1st CPD version it starts to deprecate)
+###   - if a component is deprecated, it means it is not allowed to install and upgrade.
+###   - if one starts to deprecate in a specific CPD version, please define this key in global.yml and override it in the earlier release yaml files
+
+###tolerate_storage_vendor: false  - set this if your component cannot accept storageVendor=portworx
+### and then add default_portworx_sc: to identify which special (block) storage class should be used instead. portworx-shared-gp3 would be the file SC
+
+### Note: Remove cr_apply_support: false once CR creation is confirmed to work for that (non-internal) component
+
+##############################################################
+
+# ideal to list components in dependency order - the (internal) dependencies should be listed first, followed by dependents.
+# the order is useful when deleting all components.
+
+##############################################################
+
+global_components_meta:
+
+  cpfs:
+    addon_id: cpfs
+    case_install_catalog_args: "--registry icr.io"
+    case_inventory: ibmCommonServiceOperatorSetup
+    case_name: ibm-cp-common-services
+    case_repo_path: '{{ cpfs_repo_path }}'
+    catsrc_name: opencloud-operators
+    catsrc_yml: ibm-cp-common-services/inventory/ibmCommonServiceOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_api: operator.ibm.com
+    cr_api_version: v3
+    cr_apply_support: false
+    cr_kind: CommonService
+    cr_name: common-service
+    crd_name: commonservices.operator.ibm.com
+    description: "Cloud Pak Foundational Services(CPFS)"
+    pkg_name: ibm-common-service-operator
+    sub_deletable: false
+    sub_name: ibm-common-service-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    hpa_supported: false
+    skip_image_prune: true
+    status_failed: NotReady
+    # status_field: overallStatus
+    status_field: phase
+    status_max_retries: 75
+    status_success: Succeeded
+    support_online_upgrade: true
+    scale_config_supported: true
+    scale_config_field: size
+    scale_all_instances: false
+    scale_config_values:
+      level_1: starterset
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    kube_resources:
+      - apiGroups:
+          - operator.ibm.com
+        resources:
+          - commonservices
+          - operandconfigs
+          - operandregistries
+          - operandrequests
+          - operandbindinfos
+          - cataloguis
+          - helmapis
+          - helmrepos
+          - namespacescopes
+      - apiGroups:
+          - monitoring.operator.ibm.com
+        resources:
+          - exporters
+          - prometheusexts
+      - apiGroups:
+          - elasticstack.ibm.com
+        resources:
+          - elasticstacks
+      - apiGroups:
+          - acme.cert-manager.io
+        resources:
+          - challenges
+          - orders
+      - apiGroups:
+          - cert-manager.io
+        resources:
+          - certificaterequests
+          - certificates
+          - clusterissuers
+          - issuers
+          - signers
+
+  ibm-cert-manager:
+    case_install_catalog_args: "--registry icr.io"
+    case_inventory: ibmCertManagerOperatorSetup
+    case_name: ibm-cert-manager
+    case_repo_path: '{{ cpfs_repo_path }}'
+    catsrc_name: ibm-cert-manager-catalog
+    catsrc_yml: ibm-cert-manager/inventory/ibmCertManagerOperatorSetup/files/op-olm/catalog_source.yaml
+    catsrc_ns: '{{ cert_manager_ns | default ("ibm-cert-manager", true) }}'
+    cr_apply_support: false
+    description: "IBM CERT MANAGER Operator"
+    pkg_name: ibm-cert-manager-operator
+    sub_deletable: false
+    sub_name: ibm-cert-manager-operator
+    sub_ns: '{{ cert_manager_ns | default ("ibm-cert-manager", true) }}'
+    support_shutdown: false
+    skip_image_prune: true
+    olm_auto_update: false
+    checking_flag: '--check-cert-manager'
+    support_online_upgrade: true
+
+  ibm-licensing:
+    case_install_catalog_args: "--registry icr.io"
+    case_inventory: ibmLicensingOperatorSetup
+    case_name: ibm-licensing
+    case_repo_path: '{{ cpfs_repo_path }}'
+    catsrc_name: ibm-licensing-catalog
+    catsrc_yml: ibm-licensing/inventory/ibmLicensingOperatorSetup/files/op-olm/catalog_source.yaml
+    catsrc_ns: '{{ licensing_ns | default ("ibm-licensing", true) }}'
+    cr_apply_support: false
+    description: "IBM LICENSING Operators"
+    pkg_name: ibm-licensing-operator-app
+    sub_deletable: false
+    sub_name: ibm-licensing-operator-app
+    sub_ns: '{{ licensing_ns | default ("ibm-licensing", true) }}'
+    support_shutdown: false
+    skip_image_prune: true
+    olm_auto_update: false
+    checking_flag: '--check-licensing'
+    support_online_upgrade: true
+
+  ibm_events_operator:
+    case_install_catalog_args: "--registry icr.io"
+    case_inventory: ibmCommonServiceOperatorSetup
+    case_name: ibm-cp-common-services
+    case_repo_path: '{{ cpfs_repo_path }}'
+    catsrc_name: opencloud-operators
+    catsrc_yml: ibm-cp-common-services/inventory/ibmCommonServiceOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_apply_support: false
+    cr_internal: 'true'
+    description: "IBM Events Operator"
+    pkg_name: ibm-common-service-operator
+    sub_deletable: false
+    sub_name: ibm-events-operator
+    support_shutdown: false
+    skip_image_prune: true
+    support_online_upgrade: false
+
+  zen:
+    addon_id: zen-lite
+    # Starting from release 5.0.0, zen will use it's own dedicated case package
+    case_inventory: zen_deploy
+    case_name: ibm-zen
+    catsrc_name: ibm-zen-operator-catalog
+    catsrc_yml: ibm-zen/inventory/zen_deploy/files/deploy/install/catalog-source.yaml
+    internal_sub: true # zen subscription will be deployed by zen operand request which is created by ibmcpd cr
+    cr_api: zen.cpd.ibm.com
+    cr_api_version: v1
+    cr_apply_support: false
+    cr_comment: "Zen Service"
+    cr_internal: 'true'
+    cr_kind: ZenService
+    cr_name: lite-cr
+    crd_name: zenservices.zen.cpd.ibm.com
+    description: "Zen Service in CPFS"
+    olm_auto_update: false
+    pkg_name: ibm-zen-operator
+    skip_image_prune: true
+    status_failed: Failed
+    status_field: zenStatus
+    status_max_retries: 75
+    status_operator_info_field: zenOperatorBuildNumber
+    status_reconciled_version_field: currentVersion
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdownCompleted
+    status_success: Completed
+    sub_deletable: true
+    support_shutdown: true
+    support_online_upgrade: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    kube_resources:
+      - apiGroups:
+          - zen.cpd.ibm.com
+        resources:
+          - zenservices
+          - zenservices/status
+          - zenextensions
+          - zenextensions/status
+
+  scheduler:
+    case_inventory: schedulerSetup
+    case_name: ibm-cpd-scheduling
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-scheduling-catalog
+    catsrc_yml: ibm-cpd-scheduling/inventory/schedulerSetup/files/op-olm/catalog_source.yaml
+    cr_api: scheduler.spectrumcomputing.ibm.com
+    cr_api_version: v1
+    cr_comment: "Scheduling Service"
+    cr_kind: Scheduling
+    cr_name: ibm-cpd-scheduler
+    cr_template: cpd-scheduler-cr.yml.j2
+    crd_name: scheduling.scheduler.spectrumcomputing.ibm.com
+    crd_description: "A cluster-wide pod scheduling service"
+    description: "CPD Scheduler"
+    multi_arch_images: cpopen/ibm-cpd-scheduling-operator
+    pkg_name: ibm-cpd-scheduling-operator
+    resource_yml: ibm-cpd-scheduling/inventory/schedulerSetup/resources.yaml
+    resource_image: "cpopen/ibm-cpd-scheduling-operator"
+    status_failed: Failed
+    status_field: cpd-schedulingStatus
+    status_max_retries: 75
+    status_operator_info_field: operatorBuild
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_deletable: false
+    sub_name: ibm-cpd-scheduling-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    supported_arch: amd64,ppc64le
+    support_online_upgrade: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    kube_resources:
+      - apiGroups:
+          - scheduler.spectrumcomputing.ibm.com
+        resources:
+          - scheduling
+          - scheduling/status
+          - scheduling/finalizers
+          - mcschedulings
+          - mcschedulings/status
+          - mcschedulings/finalizers
+      - apiGroups:
+          - ibm.com
+        resources:
+          - paralleljobs
+          - paralleljobs/status
+          - paralleljobs/finalizers
+          - resourceplans
+          - resourceplans/status
+          - resourceplans/finalizers
+          - resourcematches
+          - resourcematches/status
+          - resourcematches/finalizers
+      - apiGroups:
+          - work.ibm-cpd-mcscheduler.ibm.com
+        resources:
+          - remotecrs
+          - remotecrs/status
+          - remotecrs/finalizers
+          - appliedremotecrs
+          - appliedremotecrs/status
+          - appliedremotecrs/finalizers
+          - remotekuberestemplates
+          - remotekuberestemplates/status
+      - apiGroups:
+          - cluster.ibm-cpd-mcscheduler.ibm.com
+        resources:
+          - addonplacementscores
+          - addonplacementscores/status
+          - addonplacementscores/finalizers
+          - dataplanes
+          - dataplanes/status
+          - dataplanes/finalizers
+          - dataplanesetbindings
+          - dataplanesetbindings/status
+          - dataplanesetbindings/finalizers
+          - dataplanesets
+          - dataplanesets/status
+          - dataplanesets/finalizers
+          - placementruledecisions
+          - placementruledecisions/status
+          - placementruledecisions/finalizers
+          - placementrules
+          - placementrules/status
+          - placementrules/finalizers
+          - physicallocations
+          - physicallocations/status
+          - physicallocationsets
+          - physicallocationsetbindings
+          - distributionrules
+          - distributionrules/status
+          - distributionrules/finalizers
+          - addondistributionrulescores
+
+  cpd_platform:
+    case_inventory: cpdPlatformOperator
+    case_name: ibm-cp-datacore
+    case_save_args: --skip-dependencies
+    catsrc_name: cpd-platform
+    catsrc_yml: ibm-cp-datacore/inventory/cpdPlatformOperator/files/deploy/catalog-source.yaml
+    cr_api: cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Cloud Pak for Data Control Plane"
+    cr_kind: Ibmcpd
+    cr_name: ibmcpd-cr
+    crd_name: ibmcpds.cpd.ibm.com
+    crd_description: "Cloud Pak for Data Control Plane"
+    description: "Cloud Pak for Data Control Plane"
+    pkg_name: cpd-platform-operator
+    status_failed: Failed
+    status_field: controlPlaneStatus
+    status_max_retries: 125
+    status_operator_info_field: controlPlaneOperatorVersion
+    status_success: Completed
+    status_reconciled_version_field: currentVersion
+    sub_deletable: true
+    sub_name: cpd-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - cpd.ibm.com
+        resources:
+          - ibmcpds
+          - ibmcpds/status
+    auto_remove_hotfix: true
+
+  ccs:
+    addon_id: ccs
+    case_inventory: ccsSetup
+    case_name: ibm-ccs
+    catsrc_name: ibm-cpd-ccs-operator-catalog
+    catsrc_yml: ibm-ccs/inventory/ccsSetup/files/op-olm/catalog-source.yaml
+    cr_api: ccs.cpd.ibm.com
+    cr_api_version: v1beta1
+    case_save_args: --skip-dependencies
+    cr_comment: "Common Core Service"
+    cr_kind: CCS
+    cr_name: ccs-cr
+    crd_name: ccs.ccs.cpd.ibm.com
+    description: "Common Core Services"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-cpd-ccs-operator
+    olm_auto_update: false
+    operand_registry_name: ibm-cpd-ccs-registry
+    operator_name: ibm-cpd-ccs-operator
+    pkg_name: ibm-cpd-ccs
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: ccsStatus
+    status_max_retries: 200
+    status_operator_info_field: ccsBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-ccs-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    supported_arch: amd64,s390x,ppc64le
+    cr_internal: true
+    support_online_upgrade: true
+    component_dependencies:
+      - opencontent_elasticsearch
+    kube_resources:
+      - apiGroups:
+          - ccs.cpd.ibm.com
+        resources:
+          - ccs
+          - ccs/status
+          - ccs/finalizers
+      - apiGroups:
+          - runtimes.ibm.com
+        resources:
+          - runtimeassemblies
+          - runtimeassemblies/status
+          - runtimeassemblies/finalizers
+
+  analyticsengine:
+    addon_id: spark
+    case_inventory: analyticsengineOperatorSetup
+    case_name: ibm-analyticsengine
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-ae-operator-catalog
+    catsrc_yml: ibm-analyticsengine/inventory/analyticsengineOperatorSetup/files/deploy/install/catalog-source.yaml
+    cr_api: ae.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Analytics Engine Powered by Apache Spark"
+    cr_kind: AnalyticsEngine
+    cr_name: analyticsengine-sample
+    cr_template: analyticsengine-cr.yml.j2
+    crd_name: analyticsengines.ae.cpd.ibm.com
+    description: "Analytics Engine Powered by Apache Spark"
+    multi_arch_images: cpopen/ibm-cpd-analyticsengine-operator
+    operand_registry_name: ibm-cpd-ae-registry
+    operator_name: ibm-cpd-ae-operator
+    pkg_name: analyticsengine-operator
+    status_failed: Failed
+    status_field: analyticsengineStatus
+    status_max_retries: 125
+    status_operator_info_field: analyticsengineBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-cpd-ae-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_online_upgrade: true
+    auto_remove_hotfix: true
+    supported_arch: amd64,s390x,ppc64le
+    kube_resources:
+      - apiGroups:
+          - ae.cpd.ibm.com
+        resources:
+          - analyticsengine
+          - analyticsengines
+          - analyticsengine/status
+          - analyticsengines/status
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+
+  datarefinery:
+    addon_id: rshaper
+    case_inventory: datarefinerySetup
+    case_name: ibm-datarefinery
+    catsrc_name: ibm-cpd-datarefinery-operator-catalog
+    catsrc_yml: ibm-datarefinery/inventory/datarefinerySetup/files/op-olm/catalog-source.yaml
+    cr_api: datarefinery.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "Data Refinery"
+    cr_internal: 'true'
+    cr_kind: DataRefinery
+    cr_name: datarefinery-cr
+    crd_name: datarefinery.datarefinery.cpd.ibm.com
+    description: "Data Refinery"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-cpd-datarefinery-operator
+    olm_auto_update: false
+    operand_registry_name: ibm-cpd-datarefinery-registry
+    operator_name: ibm-cpd-datarefinery-operator
+    pkg_name: ibm-cpd-datarefinery
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: datarefineryStatus
+    status_max_retries: 100
+    status_operator_info_field: datarefineryBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-cpd-datarefinery-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    supported_arch: amd64,s390x,ppc64le
+    support_online_upgrade: false
+    kube_resources:
+      - apiGroups:
+          - datarefinery.cpd.ibm.com
+        resources:
+          - datarefinery
+          - datarefinery/status
+          - datarefinery/finalizers
+
+  mantaflow:
+    addon_id: mantaflow
+    auto_remove_hotfix: true
+    case_inventory: mantaflowOperatorSetup
+    case_name: mantaflow
+    case_save_args: --skip-dependencies
+    catsrc_name: manta-adl-operator-catalog
+    catsrc_yml: mantaflow/inventory/mantaflowOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_api: adl.getmanta.com
+    cr_api_version: v1beta1
+    cr_comment: "MANTA Lineage Service used internally by WKC"
+    cr_kind: MantaFlow
+    cr_name: mantaflow-wkc
+    cr_template: mantaflow-cr.yml.j2
+    crd_description: "MANTA Automated Data Lineage for IBM Cloud Pak for Data"
+    crd_name: mantaflows.adl.getmanta.com
+    description: "MANTA Automated Data Lineage for IBM Cloud Pak for Data"
+    hpa_supported: false
+    image_digests_field: "image_digests"
+    image_tags_field: "image_tags"
+    olm_auto_update: true
+    operand_registry_name: mantaflow-registry
+    operator_name: manta-adl-operator
+    pkg_name: manta-adl-operator
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: status
+    status_max_retries: 100
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    storage_vendor_ocs: ocs-storagecluster-cephfs
+    storage_vendor_portworx: portworx-shared-gp3
+    sub_name: manta-adl-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_online_upgrade: false
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64
+    kube_resources:
+      - apiGroups:
+          - adl.getmanta.com
+        resources:
+          - mantaflows
+          - mantaflows/status
+
+  dmc:
+    # has_service_instance
+    addon_id: dmc
+    case_catsrc_recursive: --recursive
+    case_inventory: dmcOperatorSetup
+    case_name: ibm-dmc
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-dmc-operator-catalog
+    catsrc_yml: ibm-dmc/inventory/dmcOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - ibm_redis_cp
+    cr_api: dmc.databases.ibm.com
+    cr_api_version: v1
+    cr_comment: "Data Management Console Add-on"
+    cr_kind: Dmcaddon
+    cr_name: dmc-addon
+    crd_name: dmcaddons.dmc.databases.ibm.com
+    crd_description: "Dmcaddon is the CRD for provisioning Data Management Console services"
+    description: "Data Management Console"
+    operand_registry_name: opencontent-dmc-registry
+    operator_name: ibm-dmc-operator-subscription
+    pkg_name: ibm-dmc-operator
+    status_failed: Failed
+    status_field: dmcAddonStatus
+    status_max_retries: 125
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-dmc-operator-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    support_online_upgrade: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    kube_resources:
+      - apiGroups:
+          - dmc.databases.ibm.com
+        resources:
+          - dmcs
+          - dmcs/status
+          - dmcaddons
+          - dmcaddons/status
+
+  db2u:
+    # addon_id: db2oltp #share same addonid with db2oltp
+    case_inventory: db2uOperatorSetup
+    case_name: ibm-db2uoperator
+    catsrc_name: ibm-db2uoperator-catalog
+    catsrc_yml: ibm-db2uoperator/inventory/db2uOperatorSetup/files/deploy/install/catalog-source.yaml
+    cr_comment: "Db2u Operator"
+    cr_internal: 'true'
+    cr_name: dummy-cr
+    crd_description: "The Custom Resource Definition of Db2 as a Service, Db2 OLTP, and Db2 Warehouse deployments"
+    description: "IBM Db2u"
+    extract_catsrc: true
+    kube_resources:
+      - apiGroups:
+          - db2u.databases.ibm.com
+        resources:
+          - db2uclusters
+          - db2uclusters/status
+          - db2uclusters/finalizers
+          - formations
+          - formations/status
+          - formations/finalizers
+    odlm_operand_name: ibm-db2u-operator
+    olm_auto_update: false
+    pkg_name: db2u-operator
+    status_failed: Failed
+    status_field: dummyStatus
+    status_max_retries: 100
+    status_success: Completed
+    sub_name: ibm-db2u-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_online_upgrade: false
+    support_shutdown: false
+    multi_arch_images: cpopen/db2u-operator,cpopen/db2u-day2-operator
+
+  db2aaservice:
+    case_inventory: db2aaserviceOperatorSetup
+    case_name: ibm-db2aaservice
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-db2aaservice-cp4d-operator-catalog
+    catsrc_yml: ibm-db2aaservice/inventory/db2aaserviceOperatorSetup/files/deploy/install/catalog-source.yaml
+    component_dependencies:
+      - db2u
+    cr_api: databases.cpd.ibm.com
+    cr_api_version: v1
+    cr_apply_support: false
+    cr_comment: "Db2 as a Service"
+    cr_kind: Db2aaserviceService
+    cr_name: db2aaservice-cr
+    crd_name: db2aaserviceservices.databases.cpd.ibm.com
+    crd_description: "Db2aaserviceService is a service that allows for managing creation, shutdown, and restart of Db2 as a Service deployments"
+    description: "CPD db2 aas component"
+    hpa_supported: false
+    kube_resources:
+      - apiGroups:
+          - databases.cpd.ibm.com
+        resources:
+          - db2aaserviceservices
+          - db2aaserviceservices/status
+          - db2aaserviceservices/finalizers
+    olm_auto_update: false
+    operand_registry_name: ibm-db2aaservice-registry
+    operator_name: ibm-db2aaservice-cp4d-operator
+    pkg_name: ibm-db2aaservice-cp4d-operator
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: db2aaserviceStatus
+    status_max_retries: 100
+    status_operator_info_field: versionBuild
+    status_reconciled_version_field: versionBuild
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-db2aaservice-cp4d-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_online_upgrade: false
+    support_shutdown: true
+
+  ws:
+    addon_id: ws
+    case_catsrc_recursive: --recursive
+    case_inventory: wslSetup
+    case_name: ibm-wsl
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-ws-operator-catalog
+    catsrc_yml: ibm-wsl/inventory/wslSetup/files/op-olm/catalog-source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - ws_runtimes
+      - datarefinery
+    cr_api: ws.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "Watson Studio"
+    cr_kind: WS
+    cr_name: ws-cr
+    crd_name: ws.ws.cpd.ibm.com
+    description: "Watson Studio"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-cpd-ws-operator
+    operand_registry_name: ibm-cpd-ws-registry
+    operator_name: ibm-cpd-ws-operator
+    pkg_name: ibm-cpd-wsl
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: wsStatus
+    status_max_retries: 150
+    status_operator_info_field: wsBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-ws-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    supported_arch: amd64,s390x,ppc64le
+    support_online_upgrade: true
+    auto_remove_hotfix: true
+    kube_resources:
+      - apiGroups:
+          - ws.cpd.ibm.com
+        resources:
+          - ws
+          - ws/status
+          - ws/finalizers
+
+  canvasbase:
+    addon_id: canvasbase
+    case_catsrc_recursive: --recursive
+    case_inventory: canvasbaseSetup
+    case_name: ibm-canvasbase
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-canvasbase-catalog
+    catsrc_yml: ibm-canvasbase/inventory/canvasbaseSetup/files/op-olm/catalog-source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    cr_api: canvasbase.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Canvas Base"
+    cr_kind: Canvasbase
+    cr_name: canvasbase-cr
+    cr_internal: true
+    crd_name: canvasbase.canvasbase.cpd.ibm.com
+    default_portworx_sc: portworx-shared-gp3
+    description: "Canvas Base"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-cpd-canvasbase-operator
+    operand_registry_name: ibm-cpd-canvasbase-registry
+    pkg_name: ibm-cpd-canvasbase
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: canvasbaseStatus
+    status_max_retries: 50
+    status_operator_info_field: canvasbaseBuildNumber
+    status_reconciled_version_field: version
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-canvasbase-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    supported_arch: amd64
+    tolerate_storage_vendor: false
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - canvasbase.cpd.ibm.com
+        resources:
+          - canvasbase
+          - canvasbase/spec
+          - canvasbase/status
+          - canvasbase/finalizers
+
+  spss:
+    addon_id: spss-modeler
+    case_catsrc_recursive: --recursive
+    case_inventory: spssSetup
+    case_name: ibm-spss
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-spss-operator-catalog
+    catsrc_yml: ibm-spss/inventory/spssSetup/files/op-olm/catalog-source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - datarefinery
+      - canvasbase
+      - ws_runtimes
+      - ws
+    cr_api: spssmodeler.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "SPSS Modeler"
+    cr_kind: Spss
+    cr_name: spss-sample
+    crd_name: spss.spssmodeler.cpd.ibm.com
+    default_portworx_sc: portworx-shared-gp3
+    description: "SPSS Modeler"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-cpd-spss-operator
+    pkg_name: ibm-cpd-spss
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: spssmodelerStatus
+    status_max_retries: 50
+    status_operator_info_field: spssmodelerBuildNumber
+    status_reconciled_version_field: version
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-spss-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64
+    tolerate_storage_vendor: false
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - spssmodeler.cpd.ibm.com
+        resources:
+          - spss
+          - spss/spec
+          - spss/status
+          - spss/finalizers
+
+  syntheticdata:
+    addon_id: unreal-data
+    case_catsrc_recursive: --recursive
+    case_inventory: syntheticdataSetup
+    case_name: ibm-syntheticdata
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-syntheticdata-catalog
+    catsrc_yml: ibm-syntheticdata/inventory/syntheticdataSetup/files/op-olm/catalog-source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - canvasbase
+    cr_api: syntheticdata.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Synthetic Data"
+    cr_kind: Syntheticdata
+    cr_name: syntheticdata-cr
+    crd_name: syntheticdata.syntheticdata.cpd.ibm.com
+    default_portworx_sc: portworx-shared-gp3
+    description: "Synthetic Data Generator"
+    hpa_supported: false
+    multi_arch_images: cpopen/ibm-cpd-syntheticdata-operator
+    pkg_name: ibm-cpd-syntheticdata
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: syntheticdataStatus
+    status_max_retries: 50
+    status_operator_info_field: syntheticdataBuildNumber
+    status_reconciled_version_field: version
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-syntheticdata-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64
+    tolerate_storage_vendor: false
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - syntheticdata.cpd.ibm.com
+        resources:
+          - syntheticdata
+          - syntheticdata/spec
+          - syntheticdata/status
+          - syntheticdata/finalizers
+
+  rstudio:
+    addon_id: rstudio
+    case_inventory: rstudioSetup
+    case_name: ibm-rstudio
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-rstudio-operator-catalog
+    catsrc_yml: ibm-rstudio/inventory/rstudioSetup/files/op-olm/catalog-source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    cr_api: rstudio.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "RStudio Server add-on"
+    cr_kind: RStudioAddon
+    cr_name: rstudio-cr
+    cr_template: rstudio-cr.yaml.j2
+    license_type: Enterprise
+    crd_name: rstudioaddons.rstudio.cpd.ibm.com
+    default_image_groups:
+      - ibmrstudioRuntimes231
+      - ibmrstudioRuntimes241
+    description: "RStudio Server"
+    hpa_supported: false
+    multi_arch_images: cpopen/ibm-cpd-rstudio-operator
+    multi_instances: true
+    pkg_name: ibm-cpd-rstudio
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: rstudioStatus
+    status_max_retries: 200
+    status_operator_info_field: rstudioBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-cpd-rstudio-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_all_instances: true
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    supported_arch: amd64,ppc64le
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - rstudio.cpd.ibm.com
+        resources:
+          - rstudioaddons
+          - rstudioaddons/status
+          - rstudioaddons/finalizers
+
+  wml:
+    addon_id: wml
+    case_catsrc_recursive: --recursive
+    case_inventory: wmlOperatorSetup
+    case_name: ibm-wml-cpd
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-wml-operator-catalog
+    catsrc_yml: ibm-wml-cpd/inventory/wmlOperatorSetup/files/deploy/install/catalog-source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    cr_api: wml.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "Watson Machine Learning add-on"
+    cr_kind: WmlBase
+    cr_name: wml-cr
+    crd_name: wmlbases.wml.cpd.ibm.com
+    default_image_groups:
+      - ibmwmlRuntimes241
+    description: "Watson Machine Learning"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-cpd-wml-operator
+    operand_registry_name: ibm-cpd-wml-registry
+    operator_name: ibm-cpd-wml-operator
+    pkg_name: ibm-cpd-wml-operator
+    status_failed: Failed
+    status_field: wmlStatus
+    status_max_retries: 100
+    status_operator_info_field: buildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-cpd-wml-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64,s390x,ppc64le
+    support_online_upgrade: true
+    auto_remove_hotfix: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: medium
+      level_5: medium
+      default: small
+    kube_resources:
+      - apiGroups:
+          - wml.cpd.ibm.com
+        resources:
+          - wmlbases
+          - wmlbases/spec
+          - wmlbases/status
+          - wmlbases/finalizers
+  wkc:
+    addon_id: wkc
+    case_catsrc_recursive: --recursive
+    case_inventory: wkcOperatorSetup
+    case_name: ibm-wkc
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-wkc-operator-catalog
+    catsrc_yml: ibm-wkc/inventory/wkcOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - analyticsengine
+      - db2u
+      - db2aaservice
+      - opencontent_fdb
+      - fdb_k8s
+      - datastage_ent
+      - datarefinery
+    cr_api: wkc.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "Watson Knowledge Catalog add-on"
+    cr_kind: WKC
+    cr_name: wkc-cr
+    crd_name: wkc.wkc.cpd.ibm.com
+    description: "Watson Knowledge Catalog"
+    pkg_name: ibm-cpd-wkc
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: wkcStatus
+    status_max_retries: 300
+    status_success: Completed
+    sub_name: ibm-cpd-wkc-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    supported_arch: amd64
+    support_online_upgrade: false
+    auto_remove_hotfix: true
+    kube_resources:
+      - apiGroups:
+          - wkc.cpd.ibm.com
+        resources:
+          - wkc
+          - wkc/status
+          - wkc/finalizers
+# ikcstandard will install the ikcstandard olm artifacts including below mentioned dependent components along with CRs (excpet wkc-cr)
+  ikc_standard:
+    addon_id: ikc_standard
+    case_catsrc_recursive: --recursive
+    case_inventory: ikcOperatorSetup
+    case_name: ibm-knowledge-catalog
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-knowledge-catalog-operator-catalog
+    catsrc_yml: ibm-knowledge-catalog/inventory/ikcOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - wkc
+      - db2u
+      - db2aaservice
+      - opencontent_fdb
+      - fdb_k8s
+      - watsonx_ai_ifm
+      - analyticsengine
+      - datarefinery
+    cr_api: ikc.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "IBM Knowledge Catalog Standard add-on"
+    cr_kind: IKCStandard
+    cr_name: ikc-standard-cr
+    crd_name: ikcstandard.ikc.cpd.ibm.com
+    description: "IBM Knowledge Catalog Standard"
+    pkg_name: ibm-cpd-knowledge-catalog
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: ikcstandardStatus
+    status_max_retries: 300
+    status_success: Completed
+    sub_name: ibm-cpd-knowledge-catalog-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    supported_arch: amd64
+    support_online_upgrade: false
+    auto_remove_hotfix: true
+    extract_catsrc: true
+    kube_resources:
+      - apiGroups:
+          - ikc.cpd.ibm.com
+        resources:
+          - ikcstandard
+          - ikcstandard/spec
+          - ikcstandard/status
+
+  # ikcpremium will install the ikcpremium olm artifacts including below mentioned dependent components along with CRs
+  ikc_premium:
+    addon_id: ikc_premium
+    case_catsrc_recursive: --recursive
+    case_inventory: ikcOperatorSetup
+    case_name: ibm-knowledge-catalog
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-knowledge-catalog-operator-catalog
+    catsrc_yml: ibm-knowledge-catalog/inventory/ikcOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - wkc
+      - analyticsengine
+      - db2u
+      - db2aaservice
+      - opencontent_fdb
+      - fdb_k8s
+      - datastage_ent
+      - datarefinery
+      - watsonx_ai_ifm
+    cr_api: ikc.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "IBM Knowledge Catalog Premium add-on"
+    cr_kind: IKCPremium
+    cr_name: ikc-premium-cr
+    crd_name: ikcpremium.ikc.cpd.ibm.com
+    description: "IBM Knowledge Catalog Premium"
+    pkg_name: ibm-cpd-knowledge-catalog
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: ikcpremiumStatus
+    status_max_retries: 300
+    status_success: Completed
+    sub_name: ibm-cpd-knowledge-catalog-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    supported_arch: amd64
+    support_online_upgrade: false
+    auto_remove_hotfix: true
+    extract_catsrc: true
+    kube_resources:
+      - apiGroups:
+          - ikc.cpd.ibm.com
+        resources:
+          - ikcpremium
+          - ikcpremium/spec
+          - ikcpremium/status
+
+  dp:
+    addon_id: data-privacy
+    case_catsrc_recursive: --recursive
+    case_inventory: dpOperatorSetup
+    case_name: ibm-dp
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-dp-operator-catalog
+    catsrc_yml: ibm-dp/inventory/dpOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - analyticsengine
+    cr_api: dp.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "Data Privacy"
+    cr_kind: DP
+    cr_name: dp-cr
+    crd_name: dp.dp.cpd.ibm.com
+    crd_description: "Data Privacy service for Masking data with Masking flow"
+    description: "Data Privacy"
+    hpa_supported: true
+    pkg_name: ibm-cpd-dp
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: dpStatus
+    status_max_retries: 200
+    status_operator_info_field: dpBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-cpd-dp-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    supported_arch: amd64
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - dp.cpd.ibm.com
+        resources:
+          - dp
+          - dp/status
+          - dp/finalizers
+
+  # Data Product Hub operator config with dependencies -- CCS, Datarefinery, Workflow and Enrichment
+  dataproduct:
+    addon_id: dataproduct
+    case_catsrc_recursive: --recursive
+    case_inventory: dataProductOperatorSetup
+    case_name: ibm-data-product
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-data-product-operator-catalog
+    catsrc_yml: ibm-data-product/inventory/dataProductOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - wkc
+      - db2u
+      - db2aaservice
+      - datarefinery
+      - analyticsengine
+    cr_api: data-product.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "Data Product Hub add-on"
+    cr_kind: DataProduct
+    cr_name: dataproduct-cr
+    crd_name: dataproduct.data-product.cpd.ibm.com
+    description: "Data Product Hub"
+    pkg_name: ibm-cpd-data-product
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: dataProductStatus
+    status_max_retries: 300
+    status_success: Completed
+    sub_name: ibm-cpd-data-product-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    supported_arch: amd64
+    support_online_upgrade: false
+    auto_remove_hotfix: true
+    extract_catsrc: true
+    support_shutdown: true
+    support_shutdown_in_api: true
+    kube_resources:
+      - apiGroups:
+          - data-product.cpd.ibm.com
+        resources:
+          - dataproduct
+          - dataproduct/spec
+          - dataproduct/status
+
+  dv:
+    # has_service_instance
+    addon_id: dv
+    case_catsrc_recursive: --recursive
+    case_inventory: dv
+    case_name: ibm-dv-case
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-dv-operator-catalog
+    catsrc_yml: ibm-dv-case/inventory/dv/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - db2u
+      - ibm_redis_cp
+      - dmc
+    cr_api: db2u.databases.ibm.com
+    cr_api_version: v1
+    cr_comment: "Data Virtualization"
+    cr_kind: DvService
+    cr_name: dv-service
+    crd_name: dvservices.db2u.databases.ibm.com
+    crd_description: "A universal query engine that executes distributed and virtualized queries across databases, data warehouses, data lakes, and streaming data without additional manual changes, data movement or replication"
+    description: "Data Virtualization"
+    hpa_supported: false
+    pkg_name: ibm-dv-operator
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: dvStatus
+    status_max_retries: 125
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-dv-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    support_online_upgrade: false
+    kube_resources:
+      - apiGroups:
+          - db2u.databases.ibm.com
+        resources:
+          - dvservices
+          - dvservices/status
+          - dvservices/finalizers
+          - bigsqls
+          - bigsqls/status
+          - bigsqls/finalizers
+          - db2uclusters
+          - db2uclusters/status
+          - db2uclusters/finalizers
+          - formations
+          - formations/status
+          - formations/finalizers
+
+  openscale:
+    addon_id: aios
+    case_inventory: ibmWatsonOpenscaleOperatorSetup
+    case_name: ibm-watson-openscale
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-openscale-operator-catalog
+    catsrc_yml: ibm-watson-openscale/inventory/ibmWatsonOpenscaleOperatorSetup/files/deploy/install/catalog-source.yaml
+    cr_api: wos.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Watson OpenScale"
+    cr_kind: WOService
+    cr_name: aiopenscale
+    crd_name: woservices.wos.cpd.ibm.com
+    crd_description: "WOService is the custom resource to manage install of IBM Watson OpenScale service in the CloudPak for Data"
+    description: "Watson OpenScale"
+    multi_instances: true
+    shutdown_all_instances: false
+    pkg_name: ibm-cpd-wos
+    status_failed: Failed
+    status_field: wosStatus
+    status_max_retries: 100
+    status_operator_info_field: wosBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: Failed
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-watson-openscale-operator-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    hpa_supported: true
+    support_online_upgrade: true
+    auto_remove_hotfix: true
+    kube_resources:
+      - apiGroups:
+          - wos.cpd.ibm.com
+        resources:
+          - woservice
+          - woservices
+          - woservices/status
+          - woservices/finalizers
+          - woserviceconfig
+          - woserviceconfigs
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: medium
+      level_5: medium
+      default: small
+
+  cognos_analytics:
+    # has_services_instances
+    addon_id: cognos-analytics-app
+    case_inventory: ibmCaOperatorSetup
+    case_name: ibm-cognos-analytics-prod
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-ca-operator-catalog
+    catsrc_yml: ibm-cognos-analytics-prod/inventory/ibmCaOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    cr_api: ca.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Cognos Analytics"
+    cr_kind: CAService
+    cr_name: ca-addon-cr
+    cr_template: cognos-analytics-cr-nd-bkup.yml.j2
+    crd_name: caservices.ca.cpd.ibm.com
+    default_portworx_sc: portworx-shared-gp3
+    description: "Cognos Analytics"
+    pkg_name: ibm-ca-operator
+    status_failed: Failed
+    status_field: caStatus
+    status_max_retries: 100
+    status_operator_info_field: build_info
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-ca-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    scale_config_supported: false
+    tolerate_storage_vendor: false
+    support_online_upgrade: false
+    auto_remove_hotfix: false
+    image_digests_field: hotfix_digests
+    kube_resources:
+      - apiGroups:
+          - ca.cpd.ibm.com
+        resources:
+          - caservices
+          - caservices/status
+          - caservices/finalizers
+          - caserviceinstances
+          - caserviceinstances/status
+          - caserviceinstances/finalizers
+
+  dashboard:
+    addon_id: cognos-dashboard
+    description: "IBM Cognos Dashboards"
+    case_inventory: dashboardOperatorSetup
+    case_name: ibm-dashboard
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-dashboard-operator-catalog
+    catsrc_yml: ibm-dashboard/inventory/dashboardOperatorSetup/files/op-olm/catalog_source.yaml
+    sub_ns: '{{ cpd_operator_ns }}'
+    sub_name: ibm-dashboard-operator-subscription
+    pkg_name: ibm-cpd-dashboard
+    sub_channel: v1.0
+    cr_comment: "IBM Cognos Dashboards"
+    cr_name: dashboardservice-cr
+    cr_api: dashboard.cpd.ibm.com
+    cr_api_version: v1
+    cr_kind: DashboardService
+    crd_name: dashboardservices.dashboard.cpd.ibm.com
+    status_field: dashboardStatus
+    status_success: Completed
+    status_failed: Failed
+    status_max_retries: 200
+    status_operator_info_field: operatorInfo
+    status_reconciled_version_field: versions.reconciled
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - ibm_redis_cp
+    tolerate_storage_vendor: false
+    default_portworx_sc: portworx-shared-gp3
+    hpa_supported: true
+    support_shutdown: true
+    support_shutdown_in_api: true
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    support_online_upgrade: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    multi_arch_images: cpopen/ibm-cpd-dashboard-operator
+    kube_resources:
+      - apiGroups:
+          - dashboard.cpd.ibm.com
+        resources:
+          - dashboardservices
+          - dashboardservices/status
+          - dashboardservices/finalizers
+
+  datastage_ent:
+    # has_service_instance
+    addon_id: datastage
+    case_inventory: dsOperatorSetup
+    case_name: ibm-datastage-enterprise
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-datastage-operator-catalog
+    catsrc_yml: ibm-datastage-enterprise/inventory/dsOperatorSetup/files/dsCatalogSource.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    cr_api: ds.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "DataStage Enterprise"
+    cr_kind: DataStage
+    cr_name: datastage
+    cr_template: datastage-cr.yml.j2
+    crd_name: datastages.ds.cpd.ibm.com
+    crd_description: DataStage is the custom resource to manage install of IBM DataStage service in the CloudPak for Data
+    default_portworx_sc: portworx-shared-gp3
+    description: "DataStage Enterprise"
+    olm_auto_update: true
+    operand_registry_name: ibm-datastage-registry
+    operator_name: ibm-cpd-datastage-operator
+    pkg_name: ibm-cpd-datastage-operator
+    status_failed: Failed
+    status_field: dsStatus
+    status_max_retries: 100
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-datastage-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    tolerate_storage_vendor: false
+    supported_arch: amd64,s390x
+    support_online_upgrade: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    kube_resources:
+      - apiGroups:
+          - ds.cpd.ibm.com
+        resources:
+          - datastages
+          - datastages/status
+          - datastages/finalizers
+          - pxruntimes
+          - pxruntimes/status
+          - pxruntimes/finalizers
+
+  datastage_ent_plus:
+    # has_service_instance
+    # addon_id: datastage #share the same addonid with datastage_ent
+    case_inventory: dsOperatorSetup
+    case_name: ibm-datastage
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-datastage-ent-plus-operator-catalog
+    catsrc_yml: ibm-datastage/inventory/dsOperatorSetup/files/dsCatalogSource.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    cr_api: ds.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "DataStage Enterprise Plus"
+    cr_kind: DataStage
+    cr_name: datastage
+    cr_template: datastage-cr.yml.j2
+    crd_name: datastages.ds.cpd.ibm.com
+    crd_description: DataStage is the custom resource to manage install of IBM DataStage service in the CloudPak for Data
+    default_portworx_sc: portworx-shared-gp3
+    description: "DataStage Enterprise Plus"
+    lookup_catsrc: true
+    olm_auto_update: true
+    operand_registry_name: ibm-datastage-registry
+    operator_name: ibm-cpd-datastage-operator
+    pkg_name: ibm-cpd-datastage-operator
+    status_failed: Failed
+    status_field: dsStatus
+    status_max_retries: 100
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-datastage-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    tolerate_storage_vendor: false
+    supported_arch: amd64,s390x
+    extract_catsrc: true
+    support_online_upgrade: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    kube_resources:
+      - apiGroups:
+          - ds.cpd.ibm.com
+        resources:
+          - datastages
+          - datastages/status
+          - datastages/finalizers
+          - pxruntimes
+          - pxruntimes/status
+          - pxruntimes/finalizers
+
+  db2oltp:
+    # has_service_instance
+    addon_id: db2oltp
+    case_inventory: db2oltpOperatorSetup
+    case_name: ibm-db2oltp
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-db2oltp-cp4d-operator-catalog
+    catsrc_yml: ibm-db2oltp/inventory/db2oltpOperatorSetup/files/deploy/install/catalog-source.yaml
+    component_dependencies:
+      - db2u
+    cr_api: databases.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Db2OLTP add-on"
+    cr_kind: Db2oltpService
+    cr_name: db2oltp-cr
+    crd_name: db2oltpservices.databases.cpd.ibm.com
+    crd_description: "Db2oltpService is a service that allows for managing creation, shutdown, and restart of Db2 OLTP deployments"
+    description: Db2
+    hpa_supported: false
+    kube_resources:
+      - apiGroups:
+          - databases.cpd.ibm.com
+        resources:
+          - db2oltpservices
+          - db2oltpservices/status
+          - db2oltpservices/finalizers
+    license_type: Community
+    pkg_name: ibm-db2oltp-cp4d-operator
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: db2oltpStatus
+    status_max_retries: 100
+    status_operator_info_field: versionBuild
+    status_reconciled_version_field: versionBuild
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-db2oltp-cp4d-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_online_upgrade: false
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+
+  bigsql:
+    # has_service_instance
+    addon_id: bigsql
+    case_inventory: bigsql
+    case_name: ibm-bigsql-case
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-bigsql-operator-catalog
+    catsrc_yml: ibm-bigsql-case/inventory/bigsql/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - db2u
+    cr_api: db2u.databases.ibm.com
+    cr_api_version: v1
+    cr_comment: "Db2 Big SQL add-on"
+    cr_kind: BigsqlService
+    cr_name: bigsql-service-cr
+    crd_name: bigsqlservices.db2u.databases.ibm.com
+    crd_description: "An enterprise-grade, hybrid ANSI-compliant SQL-on-Hadoop engine, delivering massively parallel processing and advanced data query"
+    description: "Db2 Big SQL"
+    hpa_supported: false
+    pkg_name: ibm-bigsql-operator
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: bigsqlStatus
+    status_max_retries: 100
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-bigsql-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    support_online_upgrade: false
+    kube_resources:
+      - apiGroups:
+          - db2u.databases.ibm.com
+        resources:
+          - bigsqlservices
+          - bigsqlservices/status
+          - bigsqlservices/finalizers
+          - bigsqls
+          - bigsqls/status
+          - bigsqls/finalizers
+          - db2uclusters
+          - db2uclusters/status
+          - db2uclusters/finalizers
+          - formations
+          - formations/status
+          - formations/finalizers
+
+  datagate:
+    # has_service_instance
+    addon_id: dg
+    case_inventory: datagateOperatorSetup
+    case_name: ibm-datagate-prod
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-datagate-operator-catalog
+    catsrc_yml: ibm-datagate-prod/inventory/datagateOperatorSetup/files/deploy/install/catalog-source.yaml
+    cr_api: datagate.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Data Gate"
+    cr_kind: DatagateService
+    cr_name: datagateservice-cr
+    crd_name: datagateservices.datagate.cpd.ibm.com
+    description: "Data Gate"
+    crd_description: "custom resource definition for operator in Data Gate"
+    multi_arch_images: cpopen/ibm-datagate-operator
+    pkg_name: ibm-datagate-operator
+    skip_image_prune: false
+    status_failed: Failed
+    status_field: datagateStatus
+    status_max_retries: 100
+    status_operator_info_field: datagateOperatorBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-datagate-operator-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    supported_arch: amd64,s390x
+    support_online_upgrade: false
+    image_digests_field: dg_digests
+    kube_resources:
+      - apiGroups:
+          - datagate.cpd.ibm.com
+        resources:
+          - datagateservices
+          - datagateservices/status
+          - datagateservices/finalizers
+          - datagateinstanceservices
+          - datagateinstanceservices/status
+          - datagateinstanceservices/finalizers
+
+  datagate_instance:
+    addon_id: dg
+    component_dependencies:
+      - datagate
+    cr_api: datagate.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Db2 Data Gate instance"
+    cr_kind: DatagateInstanceService
+    cr_name: DatagateInstanceService
+    crd_name: datagateinstanceservices.datagate.cpd.ibm.com
+    crd_description: "DatagateInstance is the CRD for provisioning instances of DatagateService"
+    cr_apply_support: false
+    multi_instances: true
+    shutdown_all_instances: false
+    pkg_name: ibm-datagate-operator
+    status_failed: Failed
+    status_field: datagateInstanceStatus
+    status_max_retries: 100
+    status_operator_info_field: datagateOperatorBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    support_shutdown: true
+    supported_arch: amd64,s390x
+    support_online_upgrade: false
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    image_digests_field: dg_digests
+    kube_resources:
+      - apiGroups:
+          - datagate.cpd.ibm.com
+        resources:
+          - datagateservices
+          - datagateservices/status
+          - datagateservices/finalizers
+          - datagateinstanceservices
+          - datagateinstanceservices/status
+          - datagateinstanceservices/finalizers
+
+  db2wh:
+    # has_service_instance
+    addon_id: db2wh
+    case_inventory: db2whOperatorSetup
+    case_name: ibm-db2wh
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-db2wh-cp4d-operator-catalog
+    catsrc_yml: ibm-db2wh/inventory/db2whOperatorSetup/files/deploy/install/catalog-source.yaml
+    component_dependencies:
+      - db2u
+    cr_api: databases.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Db2 Warehouse"
+    cr_kind: Db2whService
+    cr_name: db2wh-cr
+    crd_name: db2whservices.databases.cpd.ibm.com
+    crd_description: "Db2whService is a service that allows for managing creation, shutdown, and restart of Db2 Warehouse deployments"
+    description: "Db2 Warehouse"
+    hpa_supported: false
+    kube_resources:
+      - apiGroups:
+          - databases.cpd.ibm.com
+        resources:
+          - db2whservices
+          - db2whservices/status
+          - db2whservices/finalizers
+    pkg_name: ibm-db2wh-cp4d-operator
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: db2whStatus
+    status_max_retries: 100
+    status_operator_info_field: versionBuild
+    status_reconciled_version_field: versionBuild
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-db2wh-cp4d-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_online_upgrade: false
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+
+  dods:
+    addon_id: do
+    case_catsrc_recursive: " "
+    case_inventory: dodsOperatorSetup
+    case_name: ibm-dods
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-dods-operator-catalog
+    catsrc_yml: ibm-dods/inventory/dodsOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - ws_runtimes
+      - datarefinery
+      - ws
+      - wml
+    cr_api: dods.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "Decision Optimization"
+    cr_kind: DODS
+    cr_name: dods-cr
+    crd_name: dods.dods.cpd.ibm.com
+    crd_description: "Decision Optimization addon installation specification"
+    description: "Decision Optimization"
+    multi_arch_images: cpopen/ibm-cpd-dods-operator
+    pkg_name: ibm-cpd-dods
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: dodsStatus
+    status_max_retries: 100
+    status_operator_info_field: operatorVersion
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-dods-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64,ppc64le
+    hpa_supported: true
+    support_online_upgrade: true
+    auto_remove_hotfix: true
+    kube_resources:
+      - apiGroups:
+          - dods.cpd.ibm.com
+        resources:
+          - dods
+          - dods/status
+          - dods/finalizers
+
+  postgresql:
+    apply_opreq: true
+    case_inventory: ibmCloudNativePostgresqlOperator
+    case_name: ibm-cloud-native-postgresql
+    catsrc_name: cloud-native-postgresql-catalog
+    catsrc_yml: ibm-cloud-native-postgresql/inventory/ibmCloudNativePostgresqlOperator/files/op-olm/catalog_source.yaml
+    cr_internal: true
+    description: "Cloud Native PostgreSQL"
+    multi_arch_images: cpopen/ibm-cpd-cloud-native-postgresql-operator,cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog,cp/cpd/edb-postgres-license-provider,cp/cpd/edb-postgres-advanced
+    odlm_operand_name: cloud-native-postgresql-v1.22
+    odlm_opreq: cloud-native-postgresql
+    internal_sub: true
+    olm_auto_update: false
+    pkg_name: cloud-native-postgresql
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - postgresql.k8s.enterprisedb.io
+        resources:
+          - clusters
+
+  edb_cp4d:
+    addon_id: edb
+    case_inventory: ibmCPDEDBSetup
+    case_name: ibm-cpd-edb
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-edb-operator-catalog
+    catsrc_yml: ibm-cpd-edb/inventory/ibmCPDEDBSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - postgresql
+    cr_api: edb.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "EDB add-on for Cloud Pak for Data"
+    cr_kind: CPDEdbService
+    cr_name: cpd-edb-service
+    crd_name: cpdedbservices.edb.cpd.ibm.com
+    crd_description: "EnterpriseDB is the database for enabling services and provisioning instances"
+    default_portworx_sc: portworx-db-gp
+    description: "EnterpriseDB Postgres"
+    multi_arch_images: cpopen/ibm-cpd-edb-operator,cp/cpd/edb-postgres-advanced
+    pkg_name: ibm-cpd-edb
+    status_failed: Failed
+    status_field: edbStatus
+    status_max_retries: 100
+    status_operator_info_field: operatorInfo
+    status_reconciled_version_field: currentVersion
+    status_success: Completed
+    sub_name: ibm-cpd-edb-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    tolerate_storage_vendor: false
+    support_online_upgrade: true
+    image_digests_field: hotfix_digests
+    auto_remove_hotfix: true
+    kube_resources:
+      - apiGroups:
+          - edb.cpd.ibm.com
+        resources:
+          - cpdedbservices
+          - cpdedbservices/status
+          - cpdedbservices/finalizers
+          - cpdedbinstances
+          - cpdedbinstances/status
+          - cpdedbinstances/finalizers
+
+  hee:
+    addon_id: hadoop
+    case_inventory: hadoopSetup
+    case_name: ibm-hadoop
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-hadoop-operator-catalog
+    catsrc_yml: ibm-hadoop/inventory/hadoopSetup/files/op-olm/catalog-source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - datarefinery
+      - ws_runtimes
+      - ws
+    cr_api: hadoop.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Execution Engine for Apache Hadoop"
+    cr_kind: Hadoop
+    cr_name: hadoop-cr
+    crd_name: hadoop.hadoop.cpd.ibm.com
+    crd_description: "The Execution Engine for Apache Hadoop service integrates the Watson Studio service with your remote Apache Hadoop cluster."
+    default_portworx_sc: portworx-shared-gp3
+    description: "Execution Engine for Apache Hadoop"
+    hpa_supported: false
+    multi_arch_images: cpopen/ibm-cpd-hadoop-operator
+    pkg_name: ibm-cpd-hadoop
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: true
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: hadoopStatus
+    status_max_retries: 100
+    status_operator_info_field: hadoopBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-cpd-hadoop-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64,s390x
+    tolerate_storage_vendor: false
+    support_online_upgrade: false
+    kube_resources:
+      - apiGroups:
+          - hadoop.cpd.ibm.com
+        resources:
+          - hadoop
+          - hadoop/status
+          - hadoop/finalizers
+
+  match360:
+    addon_id: mdm
+    case_catsrc_recursive: --recursive
+    case_inventory: mdmOperator
+    case_name: ibm-mdm
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-mdm-operator-catalog
+    catsrc_yml: ibm-mdm/inventory/mdmOperator/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - ccs
+      - opencontent_elasticsearch
+      - ibm_redis_cp
+      - opencontent_rabbitmq
+      - opencontent_fdb
+      - fdb_k8s
+      - ibm_neo4j
+    cr_api: mdm.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Match 360 with Watson"
+    cr_kind: MasterDataManagement
+    cr_name: mdm-cr
+    cr_template: match360-cr.yml.j2
+    crd_name: masterdatamanagements.mdm.cpd.ibm.com
+    description: "Match 360 with Watson"
+    pkg_name: ibm-mdm
+    status_failed: Failed
+    status_field: mdmStatus
+    status_max_retries: 200
+    status_shutdown_failed: Failed
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-mdm-operator-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true # post action required
+    supported_arch: "amd64"
+    support_online_upgrade: false
+    image_digests_field: "image_digests"
+    image_tags_field: "image_tags"
+    auto_remove_hotfix: true
+    hpa_supported: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: x-small
+      level_2: small_mincpureq
+      level_3: small
+      level_4: medium
+      level_5: large
+      default: small
+    kube_resources:
+      - apiGroups:
+          - mdm.cpd.ibm.com
+        resources:
+          - masterdatamanagements
+          - masterdatamanagements/status
+          - masterdatamanagements/finalizers
+
+  opencontent_elasticsearch:
+    case_inventory: ibmElasticsearchOperatorSetup
+    case_name: ibm-elasticsearch-operator
+    case_repo_path: '{{ opencontent_repo_path }}'
+    catsrc_name: ibm-elasticsearch-catalog
+    catsrc_yml: ibm-elasticsearch-operator/inventory/ibmElasticsearchOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_comment: "OpenContent Elasticsearch"
+    cr_internal: true
+    cr_name: ""
+    crd_name: elasticsearchclusters.elasticsearch.opencontent.ibm.com
+    description: "OpenContent Elasticsearch"
+    internal_sub: true
+    olm_auto_update: false
+    operand_registry_name: opencontent-elasticsearch-registry
+    operator_name: elasticsearch-operator
+    pkg_name: ibm-elasticsearch-operator
+    status_failed: Failed
+    status_field: phase
+    status_max_retries: 100
+    status_success: Ready
+    sub_name: elasticsearch-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    multi_arch_images: cp/opencontent-opensearch-2.x,cp/opencontent-opensearch-2.10,cp/opencontent-opensearch-2.11,cp/opencontent-opensearch-2.12.0,cp/opencontent-opensearch-2.13.0,cp/opencontent-opensearch-2.14.0,cp/opencontent-opensearch-2.16.0,cp/opencontent-os-base-plugins-2.10,cp/opencontent-os-base-plugins-2.11,cp/opencontent-os-base-plugins-2.12.0,cp/opencontent-os-base-plugins-2.13.0,cp/opencontent-os-base-plugins-2.14.0,cp/opencontent-os-base-plugins-2.16.0,cp/opencontent-search-haproxy-fips1402,cp/opencontent-search-haproxy-fips1403,cpopen/opencontent-elasticsearch-operator-bundle,cpopen/opencontent-elasticsearch-operator-catalog,cpopen/opencontent-elasticsearch-operator,cp/opencontent-os-base-plugins-2.x
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - elasticsearch.opencontent.ibm.com
+        resources:
+          - elasticsearchclusters
+          - elasticsearchclusters/status
+          - elasticsearchclusters/finalizers
+
+  opencontent_redis:
+    case_inventory: redisOperator
+    case_name: ibm-cloud-databases-redis
+    case_repo_path: '{{ opencontent_repo_path }}'
+    catsrc_name: ibm-cloud-databases-redis-operator-catalog
+    catsrc_yml: ibm-cloud-databases-redis/inventory/redisOperator/files/op-olm/catalog_source.yaml
+    cr_comment: "IBM Cloud Databases - Redis"
+    cr_internal: true
+    crd_name: redissentinels.redis.databases.cloud.ibm.com
+    description: "OpenContent Redis"
+    multi_arch_images: cpopen/ibm-cloud-databases-redis-operator
+    olm_auto_update: false
+    operand_registry_name: opencontent-redis-registry
+    operator_name: redis-operator
+    pkg_name: ibm-cloud-databases-redis-operator
+    status_max_retries: 100
+    sub_name: redis-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - redis.databases.cloud.ibm.com
+        resources:
+          - redissentinels
+          - redissentinels/status
+          - redissentinels/finalizers
+          - backups
+          - backups/status
+          - backups/finalizers
+          - buckets
+          - buckets/status
+          - buckets/finalizers
+          - releases
+          - releases/status
+          - releases/finalizers
+          - formations
+          - formations/status
+          - formations/finalizers
+          - formationlocks
+          - formationlocks/status
+          - formationlocks/finalizers
+          - recipes
+          - recipes/status
+          - recipes/finalizers
+          - recipetemplates
+          - recipetemplates/status
+          - recipetemplates/finalizers
+
+  ibm_redis_cp:
+    case_inventory: ibmRedisCPOperator
+    case_name: ibm-redis-cp
+    case_repo_path: '{{ opencontent_repo_path }}'
+    catsrc_name: ibm-redis-cp-catalog
+    catsrc_yml: ibm-redis-cp/inventory/ibmRedisCPOperator/files/op-olm/catalog_source.yaml
+    cr_comment: "IBM Redis CP"
+    cr_internal: true
+    cr_api: redis.ibm.com
+    cr_api_version: v1
+    cr_kind: Rediscp
+    #cr_name: ibm-redis-cp-operator-cr
+    crd_name: rediscps.redis.ibm.com
+    crd_description: "Rediscp is the Schema for the rediscps API"
+    description: "IBM Redis CP Operator"
+    multi_arch_images: cpopen/ibm-redis-cp-operator-catalog,cpopen/ibm-redis-cp-operator,cpopen/ibm-redis-cp-operator-bundle,cp/ibm-redis-cp-haproxy,cp/ibm-redis-cp-6.2.7,cp/ibm-redis-cp-6.2.13,cp/ibm-redis-cp-7.2.5
+    olm_auto_update: false
+    operand_registry_name: opencontent-redis-registry
+    operator_name: ibm-redis-cp-operator
+    pkg_name: ibm-redis-cp
+    scale_config_supported: false
+    status_max_retries: 100
+    status_failed: Failed
+    status_field: redisStatus
+    status_operator_info_field: operatorInfo
+    #status_reconciled_version_field: currentVersion
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-redis-cp-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    skip_shutdown_check: true
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - redis.ibm.com
+        resources:
+          - rediscps
+          - rediscps/status
+          - rediscps/finalizers
+
+  opencontent_rabbitmq:
+    case_inventory: ibmRabbitmqOperatorSetup
+    case_name: ibm-rabbitmq-operator
+    case_repo_path: '{{ opencontent_repo_path }}'
+    catsrc_name: ibm-rabbitmq-operator-catalog
+    catsrc_yml: ibm-rabbitmq-operator/inventory/ibmRabbitmqOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_comment: "OpenContent RabbitMQ"
+    cr_internal: true
+    crd_name: rabbitmqclusters.rabbitmq.opencontent.ibm.com
+    crd_description: "The CRD for the RabbitMQ cluster which provides a message queuing backend for certain services"
+    description: "OpenContent RabbitMQ"
+    kube_resources:
+      - apiGroups:
+          - rabbitmq.opencontent.ibm.com
+        resources:
+          - rabbitmqclusters
+          - rabbitmqclusters/finalizers
+          - rabbitmqclusters/status
+    olm_auto_update: false
+    operand_registry_name: opencontent-rabbitmq-registry
+    operator_name: rabbitmq-operator
+    multi_arch_images: cp/opencontent-rabbitmq-3,cp/opencontent-rabbitmq-config-copy
+    pkg_name: ibm-rabbitmq-operator
+    skip_image_prune: true
+    status_max_retries: 100
+    sub_name: rabbitmq-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    support_online_upgrade: true
+
+  opencontent_fdb:
+    case_inventory: fdbOperator
+    case_name: ibm-fdb
+    catsrc_name: ibm-fdb-operator-catalog
+    catsrc_yml: ibm-fdb/inventory/fdbOperator/files/op-olm/catalog_source.yaml
+    scale_config_supported: false
+    component_dependencies:
+      - fdb_k8s
+    cr_api: foundationdb.opencontent.ibm.com
+    cr_api_version: v1
+    cr_comment: "OpenContent FoundationDB"
+    cr_internal: true
+    cr_kind: fdbcluster
+    crd_name: fdbclusters.foundationdb.opencontent.ibm.com
+    description: "OpenContent FoundationDB"
+    olm_auto_update: false
+    operand_registry_name: opencontent-foundationdb-registry
+    operator_name: ibm-fdb-operator
+    pkg_name: ibm-opencontent-foundationdb
+    status_failed: Failed
+    status_field: fdbStatus
+    status_max_retries: 100
+    status_success: Completed
+    sub_name: ibm-fdb-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    skip_shutdown_check: true
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - foundationdb.opencontent.ibm.com
+        resources:
+          - fdbcluster
+          - fdbclusters
+          - fdbclusters/status
+          - fdbclusters/finalizers
+
+  fdb_k8s:
+    catsrc_name: ibm-fdb-operator-catalog
+    cr_internal: true
+    internal_sub: true
+    olm_auto_update: false
+    pkg_name: fdb-kubernetes-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    support_online_upgrade: true
+
+  informix:
+    # addon_id: informix #Can be skipped because informix_cp4d has dependency on informix
+    case_inventory: ibmInformixOperatorSetup
+    case_name: ibm-informix-operator
+    catsrc_name: ibm-informix-operator-catalog
+    catsrc_yml: ibm-informix-operator/inventory/ibmInformixOperatorSetup/files/deploy/install/catalog-source.yaml
+    cr_api: ifx.ibm.com
+    cr_api_version: v2
+    cr_internal: true
+    cr_kind: Informix
+    description: "Informix deployment Operator"
+    olm_auto_update: false
+    pkg_name: ibm-informix-operator
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: informixStatus
+    status_max_retries: 100
+    status_success: Completed
+    sub_name: ibm-informix-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    skip_shutdown_check: true
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - ifx.ibm.com
+        resources:
+          - informixes
+          - informixes/status
+          - informixes/finalizers
+
+  informix_cp4d:
+    addon_id: informix
+    case_inventory: ibmInformixCp4dOperatorSetup
+    case_name: ibm-informix-cp4d-operator
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-informix-cp4d-operator-catalog
+    catsrc_yml: ibm-informix-cp4d-operator/inventory/ibmInformixCp4dOperatorSetup/files/deploy/install/catalog-source.yaml
+    component_dependencies:
+      - informix
+    cr_api: ifx.ibm.com
+    cr_api_version: v1
+    cr_comment: "Informix add-on for Cloud Pak for Data"
+    cr_kind: InformixService
+    cr_name: informixservice-cr
+    cr_template: informixservice-cr.yml.j2
+    crd_name: informixservices.ifx.ibm.com
+    description: "Informix install Operator"
+    pkg_name: ibm-informix-cp4d-operator
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: informixStatus
+    status_max_retries: 100
+    status_success: Completed
+    status_shutdown_success: Shutdown
+    status_shutdown_failed: ShutdownError
+    sub_name: ibm-informix-cp4d-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - ifx.ibm.com
+        resources:
+          - informixservices
+          - informixservices/status
+          - informixservices/finalizers
+
+  mongodb:
+    addon_id: mongodb
+    case_inventory: ibmMongodbEnterpriseSetup
+    case_name: ibm-mongodb-enterprise
+    catsrc_name: ibm-mongodb-enterprise-catalog
+    catsrc_yml: ibm-mongodb-enterprise/inventory/ibmMongodbEnterpriseSetup/files/op-olm/catalog_source.yaml
+    cr_internal: true
+    description: "MongoDB Operator"
+    olm_auto_update: false
+    pkg_name: mongodb-enterprise
+    sub_name: ibm-mongodb-enterprise-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    support_online_upgrade: false
+    kube_resources:
+      - apiGroups:
+          - mongodb.com
+        resources:
+          - mongodb
+          - mongodb/finalizers
+          - mongodbusers
+          - opsmanagers
+          - opsmanagers/finalizers
+
+  mongodb_cp4d:
+    #addon_id: mongodb #Can be skipped because mongodb_cp4d has dependency on mongodb
+    case_inventory: ibmCPDMongodbSetup
+    case_name: ibm-cpd-mongodb
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-mongodb-catalog
+    catsrc_yml: ibm-cpd-mongodb/inventory/ibmCPDMongodbSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - mongodb
+    cr_api: mongodb.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "MongoDB for Cloud Pak for Data"
+    cr_kind: CPDMongoDBService
+    cr_name: cpdmongodbservice-cr
+    crd_name: cpdmongodbservices.mongodb.cpd.ibm.com
+    crd_description: "MongoDB is the database for enabling services and provisioning instances"
+    default_portworx_sc: portworx-db-gp
+    description: "MongoDB for Cloud Pak for Data"
+    pkg_name: ibm-cpd-mongodb
+    status_failed: Failed
+    status_field: mongodbStatus
+    status_max_retries: 100
+    status_operator_info_field: operatorInfo
+    status_reconciled_version_field: currentVersion
+    status_success: Completed
+    sub_name: ibm-cpd-mongodb-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    tolerate_storage_vendor: false
+    support_online_upgrade: false
+    image_digests_field: hotfix_digests
+    auto_remove_hotfix: true
+    kube_resources:
+      - apiGroups:
+          - mongodb.cpd.ibm.com
+        resources:
+          - cpdmongodbservices
+          - cpdmongodbservices/status
+          - cpdmongodbservices/finalizers
+          - cpdmongodbopsmanagers
+          - cpdmongodbopsmanagers/status
+          - cpdmongodbopsmanagers/finalizers
+          - cpdmongodbs
+          - cpdmongodbs/status
+          - cpdmongodbs/finalizers
+
+  openpages:
+    # has_service_instance
+    addon_id: openpages
+    case_catsrc_recursive: --recursive
+    case_inventory: operatorSetup
+    case_name: ibm-openpages
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-openpages-operator-catalog
+    catsrc_yml: ibm-openpages/inventory/operatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - db2u
+      - db2aaservice
+      - opencontent_rabbitmq
+    cr_api: openpages.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "OpenPages service"
+    cr_kind: OpenPagesService
+    cr_name: openpagesservice-cr
+    crd_name: openpagesservices.openpages.cpd.ibm.com
+    crd_description: "OpenPagesService is a addon service CRD for enabling OpenPages services and provisioning instances"
+    description: OpenPages
+    pkg_name: ibm-cpd-openpages-operator
+    status_failed: Failed
+    status_field: openpagesStatus
+    status_max_retries: 100
+    status_operator_info_field: openpagesBuildNumber
+    status_reconciled_version_field: reconciledVersion
+    status_shutdown_failed: ShutdownError
+    status_shutdown_success: Shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-openpages-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    support_online_upgrade: false
+    kube_resources:
+      - apiGroups:
+          - openpages.cpd.ibm.com
+        resources:
+          - openpagesservices
+          - openpagesservices/status
+          - openpagesservices/finalizers
+
+  openpages_instance:
+    #addon_id: openpages #same as openpages
+    component_dependencies:
+      - openpages
+    cr_api: openpages.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "OpenPages instance"
+    cr_kind: OpenPagesInstance
+    cr_name: openpagesinstance
+    cr_template: openpages-instance-cr.yml.j2
+    crd_name: openpagesinstances.openpages.cpd.ibm.com
+    crd_description: "OpenPagesInstance is the CRD for provisioning instances of OpenPagesService"
+    multi_instances: true
+    shutdown_all_instances: false
+    pkg_name: ibm-cpd-openpages-operator
+    status_failed: Failed
+    status_field: openpagesStatus
+    status_max_retries: 100
+    status_operator_info_field: openpagesBuildNumber
+    status_reconciled_version_field: reconciledVersion
+    status_shutdown_failed: ShutdownError
+    status_shutdown_success: Shutdown
+    status_success: Completed
+    support_shutdown: true
+    support_tetheredns_cr: true
+    support_online_upgrade: false
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: xsmall
+      level_3: small
+      level_4: medium
+      level_5: large
+      default: small
+    kube_resources:
+      - apiGroups:
+          - openpages.cpd.ibm.com
+        resources:
+          - openpagesinstances
+          - openpagesinstances/status
+          - openpagesinstances/finalizers
+
+  planning_analytics:
+    # has_service_instance
+    addon_id: pa
+    case_inventory: ibmPlanningAnalyticsOperatorSetup
+    case_name: ibm-planning-analytics
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-planning-analytics-operator-catalog
+    catsrc_yml: ibm-planning-analytics/inventory/ibmPlanningAnalyticsOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_api: pa.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Planning Analytics"
+    cr_kind: PAService
+    cr_name: ibm-planning-analytics-service
+    crd_name: paservices.pa.cpd.ibm.com
+    default_portworx_sc: portworx-shared-gp3
+    description: "Planning Analytics"
+    pkg_name: ibm-planning-analytics-operator
+    status_failed: Failed
+    status_field: paAddonStatus
+    status_max_retries: 100
+    status_operator_info_field: paBuildVersion
+    status_reconciled_version_field: paVersion
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-planning-analytics-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    tolerate_storage_vendor: false
+    support_online_upgrade: true
+    image_digests_field: hotfix_images
+    image_tags_field: hotfix_tags
+    scale_config_supported: false
+    kube_resources:
+      - apiGroups:
+          - tm1s.ibm.com
+        resources:
+          - tm1s
+      - apiGroups:
+          - pa.cpd.ibm.com
+        resources:
+          - paservices
+          - paservice
+          - passservices
+          - paservices/status
+          - paservice/status
+          - paservices/finalizers
+          - paservice/finalizers
+          - paserviceinstances
+          - paserviceinstance
+          - paserviceinstances/status
+          - paserviceinstance/status
+          - paserviceinstances/finalizers
+          - paserviceinstance/finalizers
+
+  productmaster:
+    # addon_id: productmaster
+    case_inventory: productmasterOperatorSetup
+    case_name: ibm-productmaster
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-productmaster-catalog
+    catsrc_yml: ibm-productmaster/inventory/productmasterOperatorSetup/files/op-olm/catalog_source.yaml
+    crd_description: "This ProductMasterService CRD is used to avail the Product Master installation through CPD UI page"
+    cr_api: productmaster.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Product Master"
+    cr_kind: ProductMasterService
+    cr_name: productmasterservice-cr
+    crd_name: productmasterservices.productmaster.cpd.ibm.com
+    default_portworx_sc: portworx-shared-gp3
+    description: "Product Master"
+    pkg_name: ibm-cpd-productmaster
+    status_failed: Failed
+    status_field: productmasterserviceStatus
+    status_max_retries: 200
+    status_success: Completed
+    sub_name: ibm-productmaster-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    tolerate_storage_vendor: false
+    supported_arch: amd64
+    support_online_upgrade: true
+    auto_remove_hotfix: true
+    kube_resources:
+      - apiGroups:
+          - productmaster.cpd.ibm.com
+        resources:
+          - productmasterservices
+          - productmasterservices/status
+          - productmasterservices/finalizers
+
+  productmaster_instance:
+    addon_id: productmaster
+    cr_api: productmaster.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Product Master"
+    cr_kind: ProductMaster
+    cr_name: productmaster-cr
+    cr_template: productmaster-instance-cr.yml.j2
+    crd_name: productmasters.productmaster.cpd.ibm.com
+    default_portworx_sc: portworx-shared-gp3
+    crd_description: "This ProductMaster CRD is used for provisioning the Product Master services"
+    multi_instances: true
+    shutdown_all_instances: false
+    pkg_name: ibm-cpd-productmaster
+    status_failed: Failed
+    status_field: productmasterStatus
+    status_max_retries: 200
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    support_shutdown: true
+    support_shutdown_in_api: true
+    tolerate_storage_vendor: false
+    supported_arch: amd64
+    support_online_upgrade: true
+    auto_remove_hotfix: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: xlarge
+      default: small
+    kube_resources:
+      - apiGroups:
+          - productmaster.cpd.ibm.com
+        resources:
+          - productmaster
+          - productmaster/status
+          - productmaster/finalizers
+
+  voice_gateway:
+    case_inventory: voiceGatewayOperatorSetup
+    case_name: ibm-voice-gateway
+    catsrc_name: ibm-voice-gateway-operator-catalog
+    catsrc_yml: ibm-voice-gateway/inventory/voiceGatewayOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_api: voicegateway.watson.ibm.com
+    cr_api_version: v1
+    cr_comment: "Voice Gateway"
+    cr_kind: VoiceGateway
+    cr_name: voicegateway-cr
+    cr_template: voice-gateway-cr.yml.j2
+    crd_name: voicegateways.voicegateway.watson.ibm.com
+    description: "Voice Gateway"
+    pkg_name: ibm-voice-gateway-operator
+    status_failed: Failed
+    status_field: voicegatewayStatus
+    status_max_retries: 150
+    status_success: Completed
+    status_operator_info_field: operatorVersion
+    status_reconciled_version_field: operatorVersion
+    sub_name: ibm-voice-gateway-operator-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - voicegateway.watson.ibm.com
+        resources:
+          - voicegateways
+          - voicegateways/status
+          - voicegateways/finalizers
+
+  watson_assistant:
+    addon_id: assistant
+    case_inventory: assistantOperator
+    case_name: ibm-watson-assistant
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-watson-assistant-operator-catalog
+    catsrc_yml: ibm-watson-assistant/inventory/assistantOperator/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - postgresql
+      - opencontent_etcd
+      - watson_gateway
+      - data_governor
+      - opencontent_elasticsearch
+      - ibm_redis_cp
+      - ccs
+      - watsonx_ai_ifm
+    cr_api: assistant.watson.ibm.com
+    cr_api_version: v1
+    cr_comment: "Watson Assistant"
+    cr_kind: WatsonAssistant
+    cr_name: wa
+    cr_template: watson-assistant-cr.yml.j2
+    crd_name: watsonassistants.assistant.watson.ibm.com
+    default_portworx_sc: portworx-watson-assistant-sc
+    description: "Watson Assistant"
+    pkg_name: ibm-watson-assistant-operator
+    status_failed: Failed
+    status_field: watsonAssistantStatus
+    status_max_retries: 200
+    status_operator_info_field: operatorVersion
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-watson-assistant-operator-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    status_shutdown_failed: ShutdownError
+    status_shutdown_success: Shutdown
+    override_shutdown_field: shutdownAssistant
+    tolerate_storage_vendor: false
+    support_online_upgrade: false
+    hpa_supported: true
+    supported_arch: "amd64"
+    auto_remove_hotfix: true
+    scale_config_supported: true
+    scale_config_field: size
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: xlarge
+      default: medium
+    kube_resources:
+      - apiGroups:
+          - assistant.watson.ibm.com
+        resources:
+          - temporarypatches
+          - temporarypatches/status
+          - temporarypatches/finalizers
+          - watsonassistantanalytics
+          - watsonassistantanalytics/status
+          - watsonassistantanalytics/finalizers
+          - watsonassistantautolearns
+          - watsonassistantautolearns/status
+          - watsonassistantautolearns/finalizers
+          - watsonassistantclus
+          - watsonassistantclus/status
+          - watsonassistantclus/finalizers
+          - watsonassistantcluruntimes
+          - watsonassistantcluruntimes/status
+          - watsonassistantcluruntimes/finalizers
+          - watsonassistantclutrainings
+          - watsonassistantclutrainings/status
+          - watsonassistantclutrainings/finalizers
+          - watsonassistantdialogs
+          - watsonassistantdialogs/status
+          - watsonassistantdialogs/finalizers
+          - watsonassistantdvts
+          - watsonassistantdvts/status
+          - watsonassistantdvts/finalizers
+          - watsonassistantintegrations
+          - watsonassistantintegrations/status
+          - watsonassistantintegrations/finalizers
+          - watsonassistantrecommends
+          - watsonassistantrecommends/status
+          - watsonassistantrecommends/finalizers
+          - watsonassistants
+          - watsonassistants/status
+          - watsonassistants/finalizers
+          - watsonassistantstores
+          - watsonassistantstores/status
+          - watsonassistantstores/finalizers
+          - watsonassistantuis
+          - watsonassistantuis/status
+          - watsonassistantuis/finalizers
+
+  watson_discovery:
+    addon_id: discovery
+    case_inventory: discoveryOperators
+    case_name: ibm-watson-discovery
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-watson-discovery-operator-catalog
+    catsrc_yml: ibm-watson-discovery/inventory/discoveryOperators/files/deploy/install/catalog-source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - opencontent_etcd
+      - opencontent_rabbitmq
+      - postgresql
+      - watson_gateway
+    cr_api: discovery.watson.ibm.com
+    cr_api_version: v1
+    cr_comment: "Watson Discovery"
+    cr_kind: WatsonDiscovery
+    cr_name: wd
+    cr_template: watson-discovery-cr.yml.j2
+    crd_name: watsondiscoveries.discovery.watson.ibm.com
+    default_portworx_sc: portworx-db-gp2-sc
+    description: "Watson Discovery"
+    hpa_supported: false
+    pkg_name: ibm-watson-discovery-operator
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: xsmall
+      level_3: small
+      level_4: medium
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: watsonDiscoveryStatus
+    status_max_retries: 200
+    status_operator_info_field: operatorVersion
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-watson-discovery-operator-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    status_shutdown_failed: ShutdownError
+    status_shutdown_success: Shutdown
+    tolerate_storage_vendor: false
+    supported_arch: "amd64"
+    support_online_upgrade: false
+    kube_resources:
+      - apiGroups:
+          - oppy.ibm.com
+        resources:
+          - temporarypatches
+          - temporarypatches/status
+          - temporarypatches/finalizers
+      - apiGroups:
+          - discovery.watson.ibm.com
+        resources:
+          - watsondiscoveries
+          - watsondiscoveries/status
+          - watsondiscoveries/finalizers
+          - watsondiscoveryapis
+          - watsondiscoveryapis/status
+          - watsondiscoveryapis/finalizers
+          - watsondiscoverycnms
+          - watsondiscoverycnms/status
+          - watsondiscoverycnms/finalizers
+          - watsondiscoverycoreapis
+          - watsondiscoverycoreapis/status
+          - watsondiscoverycoreapis/finalizers
+          - watsondiscoverydfs
+          - watsondiscoverydfs/status
+          - watsondiscoverydfs/finalizers
+          - watsondiscoveryenrichments
+          - watsondiscoveryenrichments/status
+          - watsondiscoveryenrichments/finalizers
+          - watsondiscoveryfoundations
+          - watsondiscoveryfoundations/status
+          - watsondiscoveryfoundations/finalizers
+          - watsondiscoveryhdps
+          - watsondiscoveryhdps/status
+          - watsondiscoveryhdps/finalizers
+          - watsondiscoveryingestions
+          - watsondiscoveryingestions/status
+          - watsondiscoveryingestions/finalizers
+          - watsondiscoverymigrations
+          - watsondiscoverymigrations/status
+          - watsondiscoverymigrations/finalizers
+          - watsondiscoveryorchestrators
+          - watsondiscoveryorchestrators/status
+          - watsondiscoveryorchestrators/finalizers
+          - watsondiscoverypgbouncers
+          - watsondiscoverypgbouncers/status
+          - watsondiscoverypgbouncers/finalizers
+          - watsondiscoveryqueries
+          - watsondiscoveryqueries/status
+          - watsondiscoveryqueries/finalizers
+          - watsondiscoverysdus
+          - watsondiscoverysdus/status
+          - watsondiscoverysdus/finalizers
+          - watsondiscoverystatelessapis
+          - watsondiscoverystatelessapis/status
+          - watsondiscoverystatelessapis/finalizers
+          - watsondiscoverytoolings
+          - watsondiscoverytoolings/status
+          - watsondiscoverytoolings/finalizers
+          - watsondiscoverywires
+          - watsondiscoverywires/status
+          - watsondiscoverywires/finalizers
+          - watsondiscoverywksmls
+          - watsondiscoverywksmls/status
+          - watsondiscoverywksmls/finalizers
+
+  watson_ks:
+    case_inventory: wksOperatorSetup
+    case_name: ibm-watson-ks
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-watson-ks-operator-catalog
+    catsrc_yml: ibm-watson-ks/inventory/wksOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - opencontent_etcd
+      - opencontent_minio
+      - postgresql
+      - watson_gateway
+    cr_api: knowledgestudio.watson.ibm.com
+    cr_api_version: v1
+    cr_apply_support: false
+    cr_comment: "Watson Knowledge Studio"
+    cr_kind: KnowledgeStudio
+    cr_name: wks
+    crd_name: knowledgestudios.knowledgestudio.watson.ibm.com
+    default_portworx_sc: portworx-db-gp3-sc
+    deprecated: true #starting from CPD 4.8.0
+    description: "Watson Knowledge Studio"
+    hpa_supported: false
+    pkg_name: ibm-watson-ks-operator
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: wksStatus
+    status_max_retries: 200
+    status_success: Completed
+    sub_name: ibm-watson-ks-operator-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_online_upgrade: false
+    support_shutdown: false
+    tolerate_storage_vendor: false
+    kube_resources:
+      - apiGroups:
+          - knowledgestudio.watson.ibm.com
+        resources:
+          - knowledgestudios
+          - knowledgestudios/status
+          - knowledgestudios/finalizers
+
+  wml_accelerator:
+    addon_id: wml-accelerator
+    case_inventory: wmla_operator_deploy
+    case_name: ibm-wml-accelerator
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-wml-accelerator-catalog
+    catsrc_yml: ibm-wml-accelerator/inventory/wmla_operator_deploy/files/deploy/install/catalog-source.yaml
+    cr_api: spectrumcomputing.ibm.com
+    cr_api_version: v1
+    cr_comment: "Watson Machine Learning Accelerator"
+    cr_kind: Wmla
+    cr_name: wmla
+    cr_template: cpd-wml-accelerator.yml.j2
+    crd_name: wmlas.spectrumcomputing.ibm.com
+    default_portworx_sc: portworx-shared-gp3
+    description: "Watson Machine Learning Accelerator"
+    multi_instances: true
+    shutdown_all_instances: false
+    multi_arch_images: cpopen/ibm-cpd-wml-accelerator-operator
+    pkg_name: ibm-cpd-wml-accelerator-operator
+    status_failed: Failed
+    status_field: wmlaStatus
+    status_max_retries: 100
+    status_operator_info_field: wmlaOperatorBuildNumber
+    status_reconciled_version_field: versions.reconciledVersion
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-wml-accelerator-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    support_tetheredns_cr: true
+    supported_arch: amd64,ppc64le
+    tolerate_storage_vendor: false
+    support_online_upgrade: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    kube_resources:
+      - apiGroups:
+          - spectrumcomputing.ibm.com
+        resources:
+          - wmlas
+          - wmlas/status
+          - wmlas/finalizers
+
+  watson_speech:
+    addon_id: speech-to-text
+    case_install_catalog_args: --registry icr.io
+    case_inventory: speechOperatorSetup
+    case_name: ibm-watson-speech
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-watson-speech-operator-catalog
+    catsrc_yml: ibm-watson-speech/inventory/speechOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - postgresql
+      - opencontent_rabbitmq
+      - watson_gateway
+    cr_api: speech.watson.ibm.com
+    cr_api_version: v1
+    cr_comment: "Watson Speech to Text"
+    cr_kind: WatsonSpeech
+    cr_name: speech-cr
+    cr_template: watson-speech-cr.yml.j2
+    crd_name: watsonspeeches.speech.watson.ibm.com
+    crd_description: "Schema for Watson Speech to Text and Text to Speech API services"
+    default_portworx_sc: portworx-shared-gp3
+    description: "Watson Speech to Text and Text to Speech API services"
+    hpa_supported: false
+    pkg_name: ibm-watson-speech-operator
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: speechStatus
+    status_max_retries: 100
+    status_operator_info_field: operatorBuildInfo
+    status_reconciled_version_field: operands.available.versions
+    status_success: Completed
+    sub_name: ibm-watson-speech-operator-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_online_upgrade: true
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64
+    tolerate_storage_vendor: false
+    kube_resources:
+      - apiGroups:
+          - speech.watson.ibm.com
+        resources:
+          - watsonspeeches
+          - watsonspeeches/status
+          - watsonspeeches/finalizers
+      - apiGroups:
+          - operator.ibm.com
+        resources:
+          - operandrequests
+          - ibmlicensings
+      - apiGroups:
+          - certmanager.k8s.io
+          - cert-manager.io
+        resources:
+          - issuers
+          - certificates
+
+  ws_runtimes:
+    # addon_id: ws #ws_runtime will always shutdown with ws
+    case_inventory: runtimesOperatorSetup
+    case_name: ibm-wsl-runtimes
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-ws-runtimes-operator-catalog
+    catsrc_yml: ibm-wsl-runtimes/inventory/runtimesOperatorSetup/files/catalog_source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    cr_api: ws.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "Watson Studio Runtimes"
+    cr_kind: NotebookRuntime
+    cr_name: <only include 'ws_runtimes' in '--components' when installing an individual runtime or when upgrading from CPD 4.x>
+    cr_template: ws-runtimes-cr.yaml.j2
+    crd_name: notebookruntimes.ws.cpd.ibm.com
+    default_image_groups:
+      - ibmwsRuntimes241
+    description: "Watson Studio Runtimes"
+    hpa_supported: false  # n/a
+    multi_arch_images: cpopen/ibm-cpd-ws-runtimes-operator
+    multi_instances: true
+    upgrade_can_delete_cr: true
+    shutdown_all_instances: true
+    operand_registry_name: ibm-cpd-ws-runtimes-registry
+    operator_name: ibm-cpd-ws-runtimes-operator
+    pkg_name: ibm-cpd-ws-runtimes
+    scale_config_supported: false  # n/a
+    status_failed: Failed
+    status_field: runtimeStatus
+    status_max_retries: 100
+    status_operator_info_field: runtimesOperatorBuild
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-cpd-ws-runtimes-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    supported_arch: amd64,s390x,ppc64le
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - ws.cpd.ibm.com
+        resources:
+          - notebookruntimes
+          - notebookruntimes/status
+          - notebookruntimes/finalizers
+
+  opencontent_minio:
+    case_inventory: ibmMinioOperatorSetup
+    case_name: ibm-minio-operator
+    case_repo_path: '{{ opencontent_repo_path }}'
+    catsrc_name: ibm-minio-operator-catalog
+    catsrc_yml: ibm-minio-operator/inventory/ibmMinioOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_internal: true
+    description: "MinIO is a distributed object storage. Redhat certified by IBM"
+    internal_sub: true
+    olm_auto_update: false
+    pkg_name: ibm-minio-operator
+    support_shutdown: false
+    support_online_upgrade: true
+
+  opencontent_etcd:
+    case_inventory: ibmEtcdOperatorSetup
+    case_name: ibm-etcd-operator
+    case_repo_path: '{{ opencontent_repo_path }}'
+    catsrc_name: ibm-etcd-operator-catalog
+    catsrc_yml: ibm-etcd-operator/inventory/ibmEtcdOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_internal: true
+    crd_description: "The CRD for ETCD which is a distributed key-value store that provides a reliable way to store data that needs to be accessed by a distributed system or cluster of machines"
+    description: ibm-etcd-operator
+    internal_sub: true
+    olm_auto_update: false
+    pkg_name: ibm-etcd-operator
+    support_shutdown: false
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - etcd.database.coreos.com
+        resources:
+          - etcdclusters
+          - etcdclusters/status
+          - etcdclusters/finalizers
+
+  opencontent_auditwebhook:
+    case_inventory: cp4dAuditWebhookOperatorSetup
+    case_name: ibm-auditwebhook-operator
+    case_repo_path: '{{ opencontent_repo_path }}'
+    catsrc_name: ibm-auditwebhook-operator-catalog
+    catsrc_yml: ibm-auditwebhook-operator/inventory/cp4dAuditWebhookOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_internal: true
+    description: "IBM Cloudpak Open Operator for Audit Webhook"
+    internal_sub: true
+    olm_auto_update: false
+    pkg_name: cp4d-audit-webhook-operator
+    support_shutdown: false
+    support_online_upgrade: true
+
+  watson_gateway:
+    case_inventory: ibmWatsonGatewayOperatorSetup
+    case_name: ibm-watson-gateway-operator
+    case_repo_path: '{{ opencontent_repo_path }}'
+    catsrc_name: ibm-watson-gateway-operator-catalog
+    catsrc_yml: ibm-watson-gateway-operator/inventory/ibmWatsonGatewayOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_internal: true
+    description: "IBM Watson Gateway Operator"
+    extract_catsrc: true
+    internal_sub: true
+    multi_arch_images: cpopen/watson-gateway-operator,cpopen/watson-gateway-operator-bundle,cpopen/watson-gateway-operator-catalog,cp/watson-gateway
+    olm_auto_update: false
+    pkg_name: ibm-watson-gateway-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - watson-gateway.watson.ibm.com
+        resources:
+          - watsongateways
+          - watsongateways/status
+          - watsongateways/finalizers
+
+
+  data_governor:
+    addon_id:  assistant
+    case_inventory: ibmDataGovernorOperatorSetup
+    case_name: ibm-data-governor
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-data-governor-operator-catalog
+    catsrc_yml: ibm-data-governor/inventory/ibmDataGovernorOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+    cr_internal: true
+    description: "IBM cloudpak for Data Governor"
+    internal_sub: true
+    olm_auto_update: true
+    pkg_name: ibm-data-governor-operator
+    support_shutdown: false
+    skip_shutdown_check: true
+    support_online_upgrade: true
+    scale_config_supported: true
+    scale_config_field: resourceSize
+    scale_all_instances: false
+    scale_config_values:
+      level_1: level_1
+      level_2: level_2
+      level_3: level_3
+      level_4: level_4
+      level_5: level_5
+      default: level_2
+    kube_resources:
+    - apiGroups:
+      - datagovernor.ibm.com
+      - default.cognitivedata
+      resources:
+      - datagovernorarchives
+      - datagovernorarchives/status
+      - datagovernorhealthchecks
+      - datagovernorhealthchecks/status
+      - dataexhaustkubes
+      - dataexhaustkubes/status
+      - datagovernoroverrides
+      - datagovernoroverrides/status
+      - datagovernors
+      - datagovernors/status
+      - datagovernors/finalizers
+      - datagovernore2es
+      - datagovernore2es/status
+      - datagovernortenantoverrides
+      - datagovernortenantoverrides/status
+      - datagovernortenants
+      - datagovernortenants/status
+      - datagovernortenants/finalizers
+      - estemplates
+      - estemplates/status
+      - eventstreamstopics
+      - eventstreamstopics/status
+      - iamservices
+      - iamservices/status
+
+  model_train:
+    addon_id: modeltrain
+    case_inventory: modelTrainOperatorSetup
+    case_name: ibm-model-train-operator
+    case_repo_path: '{{ opencontent_repo_path }}'
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-model-train-operator-catalog
+    catsrc_yml: ibm-model-train-operator/inventory/modelTrainOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - postgresql
+      - opencontent_rabbitmq
+    cr_internal: true
+    description: "IBM cloudpak operator for training with Model Train"
+    internal_sub: true
+    olm_auto_update: false
+    pkg_name: ibm-model-train-operator
+    support_shutdown: false
+    skip_shutdown_check: true
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - modeltrain.ibm.com
+        resources:
+          - modeltrains
+          - modeltrains/status
+          - modeltrains/finalizers
+          - modeltraindynamicworkflows
+          - modeltraindynamicworkflows/status
+          - modeltraindynamicworkflows/finalizers
+
+  model_train_dwf:
+    #addon_id: modeltrain #same as model_train
+    case_inventory: modelTrainOperatorSetup
+    case_name: ibm-model-train-operator
+    case_repo_path: '{{ opencontent_repo_path }}'
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-model-train-operator-catalog
+    catsrc_yml: ibm-model-train-operator/inventory/modelTrainOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - postgresql
+      - opencontent_rabbitmq
+    cr_internal: true
+    description: "IBM cloudpak operator for training with Model Train"
+    internal_sub: true
+    olm_auto_update: false
+    pkg_name: ibm-model-train-dwf-operator
+    support_shutdown: false
+    cr_api: modeltrain.ibm.com
+    cr_kind: ModelTrainDynamicWorkflow
+    cr_api_version: v1
+    support_online_upgrade: true
+    skip_shutdown_check: true
+    kube_resources:
+      - apiGroups:
+          - modeltrain.ibm.com
+        resources:
+          - modeltraindynamicworkflows
+          - modeltraindynamicworkflows/status
+          - modeltraindynamicworkflows/finalizers
+
+  model_train_classic:
+    #addon_id: modeltrain #same as model_train
+    case_inventory: modelTrainOperatorSetup
+    case_name: ibm-model-train-operator
+    case_repo_path: '{{ opencontent_repo_path }}'
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-model-train-operator-catalog
+    component_dependencies:
+      - postgresql
+    cr_internal: true
+    description: "IBM cloudpak operator for training with Model Train"
+    internal_sub: true
+    pkg_name: ibm-model-train-classic-operator
+    support_shutdown: false
+    cr_api: modeltrain.ibm.com
+    cr_kind: ModelTrain
+    cr_api_version: v1
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - modeltrain.ibm.com
+        resources:
+          - modeltrains
+          - modeltrains/status
+          - modeltrains/finalizers
+
+  ws_pipelines:
+    addon_id: ws-pipelines
+    case_inventory: wspipelinesSetup
+    case_name: ibm-ws-pipelines
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-wspipelines-operator-catalog
+    catsrc_yml: ibm-ws-pipelines/inventory/wspipelinesSetup/files/op-olm/catalog-source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    cr_api: wspipelines.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: WS Pipelines
+    cr_kind: WSPipelines
+    cr_name: wspipelines-cr
+    crd_name: wspipelines.wspipelines.cpd.ibm.com
+    description: "Watson Studio Pipelines"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-cpd-wspipelines-operator
+    operand_registry_name: ibm-cpd-wspipelines-registry
+    operator_name: ibm-cpd-wspipelines-operator
+    pkg_name: ibm-cpd-wspipelines
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: wspipelinesStatus
+    status_max_retries: 100
+    status_success: Completed
+    status_operator_info_field: wspipelinesBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    sub_name: ibm-cpd-wspipelines-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - wspipelines.cpd.ibm.com
+        resources:
+          - wspipelines
+          - wspipelines/status
+          - wspipelines/finalizers
+    auto_remove_hotfix: true
+
+  estap:
+    case_inventory: ibmEstapSetup
+    case_name: ibm-estap
+    catsrc_name: ibm-estap-catalog
+    catsrc_yml: ibm-estap/inventory/ibmEstapSetup/files/op-olm/catalog_source.yaml
+    cr_api: estap.ibm.com
+    cr_api_version: v1
+    cr_comment: "IBM Guardium External S-TAP AddOn"
+    cr_kind: EstapServiceCPDAddOn
+    cr_name: estap-enable
+    cr_template: ibm-estap.yml.j2
+    crd_name: estapservicecpdaddons.estap.ibm.com
+    description: "Guardium External S-TAP"
+    pkg_name: ibm-estap
+    status_failed: Failed
+    status_field: estapStatus
+    status_operator_info_field: message
+    status_reconciled_version_field: version
+    status_success: Completed
+    sub_name: ibm-estap-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    support_online_upgrade: true
+
+  dpra:
+    case_inventory: ibmDpraOperator
+    case_name: ibm-dpra
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-dpra-operator-catalog
+    catsrc_yml: ibm-dpra/inventory/ibmDpraOperator/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - opencontent_rabbitmq
+      - analyticsengine
+    cr_api: dpra.truata.com
+    cr_api_version: v1
+    cr_comment: "Truata Service for Cloud Pak for Data"
+    cr_kind: DpraService
+    cr_name: dpra-cr
+    cr_template: ibm-dpra.yml.j2
+    crd_name: dpraservices.dpra.truata.com
+    description: "Truata for Cloud Pak for Data"
+    pkg_name: dpra-operator
+    status_failed: Failed
+    status_field: dpraStatus
+    status_max_retries: 100
+    status_operator_info_field: operatorInfo
+    status_reconciled_version_field: currentVersion
+    status_success: Completed
+    sub_name: ibm-cpd-dpra-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    tolerate_storage_vendor: false
+    default_portworx_sc: portworx-shared-gp3
+    support_online_upgrade: false
+    scale_config_supported: true
+    scale_config_field: profile_name
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: default
+      level_3: production
+      level_4: production
+      level_5: production
+      default: production
+    kube_resources:
+      - apiGroups:
+          - dpra.truata.com
+        resources:
+          - dpraservices
+          - dpraservices/status
+          - dpraservices/finalizers
+
+  replication:
+    addon_id: data-replication
+    case_inventory: replicationSetup
+    case_name: ibm-replication
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-replication-operator-catalog
+    catsrc_yml: ibm-replication/inventory/replicationSetup/files/replCatalogSource.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    cr_api: replication.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "Data Replication"
+    cr_kind: ReplicationService
+    cr_name: replicationservice-cr
+    cr_template: "replication-cr.yml.j2"
+    crd_description: Data Replication custom resource definition permitting to allocate a heterogeneous hierarchical and relational data replication service
+    crd_name: replicationservices.replication.cpd.ibm.com
+    default_portworx_sc: portworx-gp3-sc
+    description: "Data Replication on Cloud"
+    operator_name: ibm-cpd-replication-operator
+    pkg_name: ibm-cpd-replication-operator
+    status_failed: Failed
+    status_field: rsStatus
+    status_max_retries: 100
+    status_success: Completed
+    status_reconciled_version_field: "rsVersion"
+    status_operator_info_field: "buildNumber"
+    sub_name: ibm-cpd-replication-operator-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    tolerate_storage_vendor: false
+    supported_arch: amd64
+    support_online_upgrade: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    kube_resources:
+      - apiGroups:
+          - replication.cpd.ibm.com
+        resources:
+          - replicationserviceinstances
+          - replicationserviceinstances/status
+          - replicationserviceinstances/finalizers
+          - replicationservices
+          - replicationservices/status
+          - replicationservices/finalizers
+
+  factsheet:
+    addon_id: factsheets
+    case_inventory: factsheetOperatorSetup
+    case_name: ibm-factsheet
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-factsheet-operator-catalog
+    catsrc_yml: ibm-factsheet/inventory/factsheetOperatorSetup/files/op-olm/catalog_source.yaml
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    cr_api: factsheet.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: Factsheet
+    cr_kind: FACTSHEET
+    cr_name: factsheet-cr
+    crd_name: factsheet.factsheet.cpd.ibm.com
+    description: Factsheet
+    hpa_supported: true
+    pkg_name: ibm-cpd-factsheet
+    status_failed: Failed
+    status_field: factsheetStatus
+    status_max_retries: 200
+    status_operator_info_field: factsheetBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-cpd-factsheet-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    multi_arch_images: cpopen/ibm-cpd-factsheet-operator
+    supported_arch: amd64,s390x
+    support_online_upgrade: true
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: small
+      level_4: medium
+      level_5: large
+      default: small
+    auto_remove_hotfix: true
+    kube_resources:
+      - apiGroups:
+          - factsheet.cpd.ibm.com
+        resources:
+          - factsheet
+          - factsheet/spec
+          - factsheet/status
+          - factsheet/finalizers
+
+  dfo:
+    description: "Data Fabric Orchestrator"
+    case_name: ibm-dfo
+    case_inventory: dfoOperatorSetup
+    case_save_args: ""
+    catsrc_name: ibm-cpd-dfo-operator-catalog
+    catsrc_yml: ibm-dfo/inventory/dfoOperatorSetup/files/op-olm/catalog_source.yaml
+    hpa_supported: true
+    sub_ns: "{{ cpd_operator_ns }}"
+    sub_channel: "beta"
+    sub_name: "ibm-cpd-dfo-operator-catalog"
+    pkg_name: "ibm-cpd-dfo"
+    cr_template: "ibm-dfo.yml.j2"
+    cr_comment: "IBM Data Fabric Orchestrator"
+    cr_name: "dfo-cr"
+    cr_api: "dfo.cpd.ibm.com"
+    cr_api_version: "v1"
+    cr_kind: "DFO"
+    crd_name: "dfo.dfo.cpd.ibm.com"
+    olm_auto_update: false
+    status_field: "dfoStatus"
+    status_success: "Completed"
+    status_failed: "Failed"
+    status_max_retries: 75
+    status_operator_info_field: "message"
+    status_reconciled_version_field: "version"
+    status_shutdown_success: ShutdownCompleted
+    status_shutdown_failed: ShutdownError
+    supported_arch: amd64
+    support_shutdown: true
+    support_online_upgrade: true
+
+  watsonx_data:
+    addon_id: watsonx-data
+    case_inventory: ibmWatsonxDataOperatorSetup
+    case_name: ibm-watsonx-data
+    case_save_args: --skip-dependencies
+    component_dependencies:
+      - analyticsengine
+    catsrc_name: ibm-watsonx-data-catalog
+    catsrc_yml: ibm-watsonx-data/inventory/ibmWatsonxDataOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_api: watsonxdata.ibm.com
+    cr_api_version: v1
+    cr_comment: "IBM watsonx.data"
+    cr_kind: WxdAddon
+    cr_name: wxdaddon
+    cr_template: "wxd-cr.yml.j2"
+    crd_name: wxdaddons.lakehouse.ibm.com
+    crd_description: "WxdAddon is the CRD for provisioning Watsonx Data services"
+    description: "IBM watsonx.data"
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: xlarge
+      default: small
+    pkg_name: ibm-lakehouse-operator
+    status_failed: Failed
+    status_field: wxdStatus
+    status_max_retries: 125
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: Shutdown
+    status_success: Completed
+    sub_name: ibm-lakehouse-operator-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    status_operator_info_field: wxdBuildNumber
+    status_reconciled_version_field: version
+    tolerate_storage_vendor: false
+    default_portworx_sc: portworx-db-gp3-sc
+    hpa_supported: true
+    support_shutdown: true
+    support_shutdown_in_api: true
+    shutdown_requires_manual_steps: true
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - watsonxdata.ibm.com
+        resources:
+          - wxds
+          - wxds/status
+          - wxds/finalizers
+          - wxdaddons
+          - wxdaddons/status
+          - wxdaddons/finalizers
+          - wxdengines
+          - wxdengines/status
+          - wxdengines/finalizers
+
+  wxd_query_optimizer:
+    #addon_id: watsonx-data same as watsonx_data
+    description: "IBM watsonx.data query optimizer"
+    supported_arch: amd64
+    case_save_args: --skip-dependencies
+    component_dependencies:
+      - db2u
+    cr_internal: true
+    hpa_supported: false
+    support_shutdown: false
+    support_online_upgrade: false
+
+  watsonx_ai:
+    addon_id: watsonx_ai
+    case_catsrc_recursive: --recursive
+    case_inventory: watsonxaiSetup
+    case_name: ibm-watsonx-ai
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-watsonx-ai-operator-catalog
+    catsrc_yml: ibm-watsonx-ai/inventory/watsonxaiSetup/files/op-olm/catalog-source.yaml
+    cr_api: watsonxai.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "watsonx ai"
+    cr_kind: Watsonxai
+    cr_name: watsonxai-cr
+    crd_name: watsonxai.watsonxai.cpd.ibm.com
+    description: "IBM watsonx.ai"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-cpd-watsonx-ai-operator
+    operand_registry_name: ibm-cpd-watsonx-ai-registry
+    operator_name: ibm-cpd-watsonx-ai-operator
+    pkg_name: ibm-cpd-watsonx-ai
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: watsonxaiStatus
+    status_max_retries: 150
+    status_operator_info_field: watsonxaiBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-watsonx-ai-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64
+    extract_catsrc: true
+    auto_remove_hotfix: true
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - watsonx_ai_ifm
+      - ws_runtimes
+      - datarefinery
+      - ws
+      - wml
+    support_online_upgrade: true
+    skip_image_prune: false
+    kube_resources:
+      - apiGroups:
+          - watsonxai.cpd.ibm.com
+        resources:
+          - watsonxai
+          - watsonxai/status
+          - watsonxai/finalizers
+
+  watsonx_ai_ifm:
+    addon_id: watsonx_ai_ifm
+    case_catsrc_recursive: --recursive
+    case_inventory: watsonxaiifmSetup
+    case_name: ibm-watsonx-ai-ifm
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-watsonx-ai-ifm-operator-catalog
+    catsrc_yml: ibm-watsonx-ai-ifm/inventory/watsonxaiifmSetup/files/op-olm/catalog-source.yaml
+    cr_api: watsonxaiifm.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "watsonx ai Inference for Foundation Models"
+    cr_kind: Watsonxaiifm
+    cr_name: watsonxaiifm-cr
+    crd_name: watsonxaiifm.watsonxaiifm.cpd.ibm.com
+    default_image_groups:
+      - ungroupedImages  # virtual group
+    description: "IBM watsonx.ai Inference for Foundation Models"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-cpd-watsonx-ai-ifm-operator
+    operand_registry_name: ibm-cpd-watsonx-ai-ifm-registry
+    operator_name: ibm-cpd-watsonx-ai-ifm-operator
+    pkg_name: ibm-cpd-watsonx-ai-ifm
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: watsonxaiifmStatus
+    status_max_retries: 150
+    status_operator_info_field: watsonxaiifmBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-watsonx-ai-ifm-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    supported_arch: amd64
+    extract_catsrc: true
+    auto_remove_hotfix: true
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    support_online_upgrade: false
+    skip_image_prune: false
+    kube_resources:
+      - apiGroups:
+          - watsonxaiifm.cpd.ibm.com
+        resources:
+          - watsonxaiifm
+          - watsonxaiifm/status
+          - watsonxaiifm/finalizers
+
+  watsonx_bi_assistant:
+    addon_id: watsonx-bi-assistant
+    case_inventory: ibmWxbiaOperatorSetup
+    case_name: ibm-cp-watsonx-bi-assistant
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-wxbia-operator-catalog
+    catsrc_yml: ibm-cp-watsonx-bi-assistant/inventory/ibmWxbiaOperatorSetup/files/op-olm/catalog_source.yaml
+    extract_catsrc: true
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - ikc_standard
+      - opencontent_fdb
+      - fdb_k8s
+      - datastage_ent
+      - datarefinery
+      - wkc
+      - db2u
+      - db2aaservice
+      - watsonx_ai_ifm
+      - analyticsengine
+    cr_api: wxbia.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "IBM watsonx BI Assistant"
+    cr_kind: WXBIAService
+    cr_name: wxbia-addon-cr
+    cr_template: wxbia-cr.yml.j2
+    crd_name: wxbiaservices.wxbia.cpd.ibm.com
+    default_portworx_sc: portworx-shared-gp3
+    description: "IBM watsonx BI Assistant"
+    pkg_name: ibm-cpd-wxbia-operator
+    status_failed: Failed
+    status_field: wxbiaStatus
+    status_max_retries: 100
+    status_operator_info_field: build_info
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-wxbia-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    scale_config_supported: false
+    tolerate_storage_vendor: false
+    support_online_upgrade: false
+    auto_remove_hotfix: false
+    image_digests_field: hotfix_digests
+    kube_resources:
+      - apiGroups:
+          - wxbia.cpd.ibm.com
+        resources:
+          - wxbiaservices
+          - wxbiaservices/status
+          - wxbiaservices/finalizers
+          - wxbiaserviceinstances
+          - wxbiaserviceinstances/status
+          - wxbiaserviceinstances/finalizers
+
+  wca_base:
+    addon_id: code-assistant-base
+    case_catsrc_recursive: --recursive
+    case_inventory: wcabase
+    case_name: ibm-wca-base
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-wca-base-catalog
+    cr_api: wca.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "watsonx Code Assistant Base"
+    cr_kind: WCABase
+    cr_name: wcabase-cr
+    crd_name: wcabases.wca.cpd.ibm.com
+    description: "watsonx Code Assistant Base"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-wca-base-operator
+    operand_registry_name: ibm-wca-base-registry
+    operator_name: ibm-cpd-wca-base-operator
+    pkg_name: ibm-cpd-wca-base
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: wcabaseStatus
+    status_max_retries: 150
+    status_operator_info_field: wcabaseOperatorBuild
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-wca-base-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64
+    auto_remove_hotfix: true
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+    support_online_upgrade: true
+    skip_image_prune: false
+    kube_resources:
+      - apiGroups:
+          - wca.cpd.ibm.com
+        resources:
+          - wcabases
+          - wcabases/status
+          - wcabases/finalizers
+
+  wca_ansible:
+    addon_id: code-assistant-ansible
+    case_catsrc_recursive: --recursive
+    case_inventory: wcaansible
+    case_name: ibm-wca-ansible
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-wca-ansible-catalog
+    cr_api: wca.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "watsonx Code Assistant for Ansible"
+    cr_kind: WCAAnsible
+    cr_name: wcaansible-cr
+    crd_name: wcaansibles.wca.cpd.ibm.com
+    description: "watsonx Code Assistant for Ansible"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-wca-ansible-operator
+    operand_registry_name: ibm-wca-ansible-registry
+    operator_name: ibm-cpd-wca-ansible-operator
+    pkg_name: ibm-cpd-wca-ansible
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: wcaansibleStatus
+    status_max_retries: 150
+    status_operator_info_field: wcaansibleOperatorBuild
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-wca-ansible-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64
+    auto_remove_hotfix: true
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - wca_base
+      - datarefinery
+      - watsonx_ai_ifm
+      - watsonx_ai
+      - ws_runtimes
+      - ws
+      - wml
+    support_online_upgrade: true
+    skip_image_prune: false
+    kube_resources:
+      - apiGroups:
+          - wca.cpd.ibm.com
+        resources:
+          - wcaansibles
+          - wcaansibles/status
+          - wcaansibles/finalizers
+
+  wca_z:
+    addon_id: code-assistant-z
+    case_catsrc_recursive: --recursive
+    case_inventory: wcaz
+    case_name: ibm-wca-z
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-wca-z-catalog
+    cr_api: wca.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "watsonx Code Assistant for Z"
+    cr_kind: WCAZ
+    cr_name: wcaz-cr
+    crd_name: wcazs.wca.cpd.ibm.com
+    description: "watsonx Code Assistant for Z"
+    hpa_supported: true
+    multi_arch_images: cpopen/ibm-wca-z-operator
+    operand_registry_name: ibm-wca-z-registry
+    operator_name: ibm-cpd-wca-z-operator
+    pkg_name: ibm-cpd-wca-z
+    scale_config_supported: true
+    scale_config_field: scaleConfig
+    scale_all_instances: false
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: small
+    status_failed: Failed
+    status_field: wcazStatus
+    status_max_retries: 150
+    status_operator_info_field: wcazOperatorBuild
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-wca-z-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64
+    auto_remove_hotfix: true
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - wca_base
+      - watsonx_ai_ifm
+    support_online_upgrade: true
+    skip_image_prune: false
+    kube_resources:
+      - apiGroups:
+          - wca.cpd.ibm.com
+        resources:
+          - wcazs
+          - wcazs/status
+          - wcazs/finalizers
+
+  wca_z_ce:
+    addon_id: code-assistant-z-code-explanation
+    case_catsrc_recursive: --recursive
+    case_inventory: wca_z_ce
+    case_name: ibm-wca-z-code-explanation
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-wca-z-code-explanation-catalog
+    cr_api: wca.cpd.ibm.com
+    cr_api_version: v1
+    cr_comment: "watsonx Code Assistant for Z Code Explanation"
+    cr_kind: CodeExplanation
+    cr_name: ibm-code-explanation-cr
+    crd_name: codeexplanation.wca.cpd.ibm.com
+    description: "watsonx Code Assistant for Z Code Explanation"
+    hpa_supported: false
+    multi_arch_images: cpopen/ibm-wca-z-code-explanation-operator
+    operator_name: ibm-wca-z-code-explanation-operator
+    pkg_name: ibm-code-explanation
+    scale_config_supported: false
+    status_failed: Failed
+    status_field: codeexplanationStatus
+    status_max_retries: 150
+    status_operator_info_field: codeexplanationOperatorBuild
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-wca-z-code-explanation-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    support_shutdown_in_api: false
+    supported_arch: amd64,s390x
+    auto_remove_hotfix: true
+    component_dependencies:
+      - opencontent_elasticsearch
+      - ccs
+      - watsonx_ai_ifm
+    support_online_upgrade: true
+    skip_image_prune: false
+    kube_resources:
+      - apiGroups:
+          - wca.cpd.ibm.com
+        resources:
+          - codeexplanations
+          - codeexplanations/status
+          - codeexplanations/finalizers
+
+  watsonx_governance:
+    addon_id: watsonx_governance
+    case_catsrc_recursive: --recursive
+    case_inventory: watsonxgovernanceOperatorSetup
+    case_name: ibm-watsonx-governance
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-watsonx-governance-operator-catalog
+    catsrc_yml: ibm-watsonx-governance/inventory/watsonxgovernanceOperatorSetup/files/op-olm/catalog_source.yaml
+    cr_api: watsonxgovernance.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: "watsonx governance"
+    cr_kind: Watsonxgovernance
+    cr_name: watsonxgovernance-cr
+    crd_name: watsonxgovernance.watsonxgovernance.cpd.ibm.com
+    crd_description: "Watsonx Governance is the CRD for provisioning Watsonx Governance services"
+    description: "IBM Watsonx Governance"
+    hpa_supported: false
+    multi_arch_images: cpopen/ibm-cpd-watsonx-governance-operator
+    operand_registry_name: ibm-cpd-watsonx-governance-registry
+    operator_name: ibm-cpd-watsonx-governance-operator
+    pkg_name: ibm-cpd-watsonx-governance
+    status_failed: Failed
+    status_field: watsonxGovernanceStatus
+    status_max_retries: 240
+    status_operator_info_field: watsonxGovernanceBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    status_success: Completed
+    sub_name: ibm-cpd-watsonx-governance-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    support_shutdown_in_api: true
+    supported_arch: amd64
+    extract_catsrc: true
+    auto_remove_hotfix: true
+    component_dependencies:
+      - db2u
+      - db2aaservice
+      - opencontent_rabbitmq
+      - opencontent_elasticsearch
+      - ccs
+      - factsheet
+      - openpages
+      - openscale
+      - wml
+      - watsonx_ai_ifm
+    support_online_upgrade: true
+    skip_image_prune: false
+    kube_resources:
+      - apiGroups:
+          - watsonxgovernance.cpd.ibm.com
+        resources:
+          - watsonxgovernance
+          - watsonxgovernance/status
+          - watsonxgovernance/finalizers
+
+  ibm_neo4j:
+    addon_id: ibm_neo4j
+    case_inventory: neo4jOperatorSetup
+    case_name: ibm-neo4j
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-cpd-neo4j-operator-catalog
+    catsrc_yml: ibm-neo4j/inventory/neo4jOperatorSetup/files/op-olm/catalog_source.yaml
+    extract_catsrc: true
+    cr_api: neo4j.cpd.ibm.com
+    cr_api_version: v1beta1
+    cr_comment: Neo4j
+    cr_kind: Neo4jCluster
+    cr_name: neo4j-cr
+    cr_internal: 'true'
+    crd_name: neo4jclusters.neo4j.cpd.ibm.com
+    description: Neo4j
+    hpa_supported: false
+    pkg_name: ibm-cpd-neo4j
+    operator_name: ibm-cpd-neo4j-operator
+    scaleconfig_supported: 'false'
+    status_failed: Failed
+    status_field: neo4jStatus
+    status_max_retries: 200
+    status_operator_info_field: neo4jBuildNumber
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-cpd-neo4j-operator-catalog-subscription
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: true
+    status_shutdown_failed: shutdownError
+    status_shutdown_success: shutdown
+    supported_arch: amd64
+    support_online_upgrade: true
+    kube_resources:
+      - apiGroups:
+          - neo4j.cpd.ibm.com
+        resources:
+          - neo4jcluster
+          - neo4jcluster/spec
+          - neo4jcluster/status
+          - neo4jcluster/finalizers
+
+  watsonx_orchestrate:
+    addon_id: orchestrate
+    case_inventory: watsonxorchestrate
+    case_name: ibm-watsonx-orchestrate
+    case_save_args: --skip-dependencies
+    catsrc_name: ibm-watsonx-orchestrate-catalog
+    catsrc_yml: ibm-watsonx-orchestrate/inventory/watsonxorchestrate/files/catalog_source.yaml
+    component_dependencies:
+      - postgresql
+      - opencontent_minio
+      - opencontent_etcd
+      - watson_gateway
+      - data_governor
+      - opencontent_elasticsearch
+      - ibm_redis_cp
+      - ccs
+      - watsonx_ai_ifm
+      - watson_assistant
+      - opencontent_rabbitmq
+    cr_api: wo.watsonx.ibm.com
+    cr_api_version: v1
+    cr_comment: "WatsonX Orchestrate"
+    cr_kind: WatsonxOrchestrate
+    cr_name: wo
+    cr_template: watsonx-orchestrate-cr.yml.j2
+    crd_name: watsonxorchestrates.wo.watsonx.ibm.com
+    default_portworx_sc: portworx-db-gp3-sc
+    description: "WatsonX Orchestrate"
+    image_digests_field: "image.digestOverrides"
+    image_tags_field: "image.tagOverrides"
+    pkg_name: ibm-watsonx-orchestrate-operator
+    scale_config_supported: true
+    scale_config_field: size
+    scale_config_values:
+      level_1: small_mincpureq
+      level_2: small
+      level_3: medium
+      level_4: large
+      level_5: large
+      default: medium
+    status_failed: Failed
+    status_field: watsonxOrchestrateStatus
+    status_max_retries: 200
+    status_operator_info_field: operatorVersion
+    status_reconciled_version_field: versions.reconciled
+    status_success: Completed
+    sub_name: ibm-cpd-watsonx-orchestrate-operator
+    sub_ns: '{{ cpd_operator_ns }}'
+    support_shutdown: false
+    support_online_upgrade: false
+    tolerate_storage_vendor: false
+    hpa_supported: true
+    supported_arch: "amd64"
+    auto_remove_hotfix: true
+    kube_resources:
+      - apiGroups:
+          - wo.watsonx.ibm.com
+        resources:
+          - watsonxorchestrates
+          - watsonxorchestrates/finalizers
+          - watsonxorchestrates/status
+          - digitalemployees
+          - aicognitivemappers
+          - aicognitivemappers/status
+          - aicognitivemappers/finalizers
+          - appconnectcomponentprovisioners
+          - appconnectcomponentprovisioners/status
+          - appconnectcomponentprovisioners/finalizers
+          - appconnectskillproviders
+          - appconnectskillproviders/status
+          - appconnectskillproviders/finalizers
+          - automationdiscoveries
+          - automationdiscoveries/status
+          - automationdiscoveries/finalizers
+          - bootstrapjobs
+          - bootstrapjobs/status
+          - bootstrapjobs/finalizers
+          - buildcoretenantmanagements
+          - buildcoretenantmanagements/status
+          - buildcoretenantmanagements/finalizers
+          - connectionmanagers
+          - connectionmanagers/status
+          - connectionmanagers/finalizers
+          - connectorservices
+          - connectorservices/status
+          - connectorservices/finalizers
+          - discoverskills
+          - discoverskills/status
+          - discoverskills/finalizers
+          - landingpages
+          - landingpages/status
+          - landingpages/finalizers
+          - mappedskillproviders
+          - mappedskillproviders/status
+          - mappedskillproviders/finalizers
+          - multiskillorchestrationais
+          - multiskillorchestrationais/status
+          - multiskillorchestrationais/finalizers
+          - newteamsservers
+          - newteamsservers/status
+          - newteamsservers/finalizers
+          - openapiproviders
+          - openapiproviders/status
+          - openapiproviders/finalizers
+          - platformuis
+          - platformuis/status
+          - platformuis/finalizers
+          - skillcataloguis
+          - skillcataloguis/status
+          - skillcataloguis/finalizers
+          - skillsequencingapps
+          - skillsequencingapps/status
+          - skillsequencingapps/finalizers
+          - skillservers
+          - skillservers/status
+          - skillservers/finalizers
+          - studios
+          - studios/status
+          - studios/finalizers
+          - teamsservers
+          - teamsservers/status
+          - teamsservers/finalizers
+          - teamsuis
+          - teamsuis/status
+          - teamsuis/finalizers
+          - tenantcontrollers
+          - tenantcontrollers/status
+          - tenantcontrollers/finalizers
+          - tenantregistries
+          - tenantregistries/status
+          - tenantregistries/finalizers
+          - uiproxies
+          - uiproxies/status
+          - uiproxies/finalizers
+      - apiGroups:
+          - rotation.apicatalog.watsonx.ibm.com
+        resources:
+          - apicatalogcertkeyrotations
+      - apiGroups:
+          - database.apicatalog.watsonx.ibm.com
+        resources:
+          - apicatalogdatabaseclusters
+      - apiGroups:
+          - management.apicatalog.watsonx.ibm.com
+        resources:
+          - apicatalogmanagers
+      - apiGroups:
+          - apidiscovery.watsonx.ibm.com
+        resources:
+          - apis
